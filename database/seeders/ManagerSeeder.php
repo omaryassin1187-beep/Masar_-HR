@@ -21,7 +21,7 @@ class ManagerSeeder extends Seeder
         ]);
         $marketingManager->assignRole('manager');
 
-    $backendManager=User::create([
+       $backendManager=User::create([
         'full_name'=>'ahmadBack',
         'email'=>'omar14@gmail.com',
         'dep_id'=>4,
