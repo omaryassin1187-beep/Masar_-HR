@@ -13,7 +13,7 @@ class ManagerSeeder extends Seeder
      */
     public function run(): void
     {
-       $marketingManager=User::create([
+        $marketingManager=User::create([
         'full_name'=>'ahmadMarketing',
         'email'=>'omar13@gmail.com',
         'dep_id'=>3,
