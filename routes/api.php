@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\userController;
@@ -15,5 +16,10 @@ Route::post('login', [userController::class, 'login']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
+
     Route::get('logout', [UserController::class, 'logout']);
+
+    Route::apiResource('profiles',ProfileController::class);
+
 });
+

@@ -15,7 +15,7 @@ class userController extends Controller
         $validatedData=$request->validate([
         'password'=>'required|min:8|confirmed|string',
         ]);
-        $email='omar12@gmail.com';
+        $email='omar12@gmail.com';    //ايميل المتقدم ,نستطيع الوصول اليه من خلال العلاقات
         $user = User::where('email', $email)->first();
 
         if (! $user) {
@@ -82,4 +82,6 @@ class userController extends Controller
             'status_code' => 200
         ], 200);
     }
+
+    
 }
