@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 class userController extends Controller
 {
-    
+
 
     public function putUserPassword(Request $request)
     {
@@ -34,7 +34,7 @@ class userController extends Controller
         ], 200);
     }
 
-     public function login(Request $request)
+    public function login(Request $request)
     {
         $request->validate([
             'email' => 'required|email|exists:users,email',
@@ -71,7 +71,7 @@ class userController extends Controller
             'status_code' => 200
         ], 200);
 
-        
+
     }
 
     public function logout(Request $request)

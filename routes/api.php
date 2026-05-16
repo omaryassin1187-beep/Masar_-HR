@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Reqruitment\JobRequisitionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\userController;
@@ -23,3 +23,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
+Route::middleware('auth:sanctum')->group(function () {
+Route::post('/job-requisitions', [JobRequisitionController::class, 'store']);
+Route::get('/requisitions', [JobRequisitionController::class, 'getAllRequisitions']);
+
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/notifications', [JobRequisitionController::class, 'getNotifications']);
+    Route::post('/notifications/{id}/read', [JobRequisitionController::class, 'markAsRead']);
+});
