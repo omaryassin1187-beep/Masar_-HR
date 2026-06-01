@@ -61,15 +61,7 @@ class JobRequisitionController extends Controller
     }
 
 
-    public function getNotifications(): JsonResponse
-{
-    $notifications = Auth::user()->notifications;
-
-    return response()->json([
-        'message' => 'Notifications retrieved successfully',
-        'data'    => $notifications,
-    ], 200);
-}
+   
 
 
 

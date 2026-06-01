@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\UserResource;
+use Illuminate\Http\JsonResponse;
+
 class userController extends Controller
 {
 
@@ -83,5 +86,72 @@ class userController extends Controller
         ], 200);
     }
 
+        public function getUserById($id)
+    {
+        $user= User::findOrFail($id);
+        return new UserResource($user);
+    }
+
     
+        public function getEmployeesByDepartment($depId)
+    {
+        $emplyees= User::role('employee')
+                    ->where('dep_id', $depId)
+                    ->get();
+          return UserResource::collection($emplyees);
+    }
+
+        public function getManagerEmployees()
+    {
+        $manager = auth()->user();
+
+        $employees = User::role('employee')
+            ->where('dep_id', $manager->dep_id)
+            ->get();
+
+        return UserResource::collection($employees);
+    }
+    
+        public function getAllEmployees()
+    {
+         $emplyees= User::role('employee')->get();
+         return UserResource::collection($emplyees);
+    }
+
+
+        public function getNotifications(): JsonResponse
+    {
+        $notifications = Auth::user()->notifications;
+
+        return response()->json([
+            'message' => 'Notifications retrieved successfully',
+            'data'    => $notifications,
+        ], 200);
+    }
+
+     public function markAsRead($id)
+   {
+       $notification=Auth()->user()->notifications()->findORFail($id) ;
+       $notification->markAsRead();
+       return response()->json([
+       'message'=>'your notifications ',
+       'notification'=>$notification
+       ],200);
+   }
+
+
+    public function getUnReadNotification()
+    {
+        $notification=Auth()->user()->notifications->where('read_at', null) ;
+        if($notification->isEmpty()){
+        return response()->json([
+         'message'=>'no new notification ',
+          ],200);
+        }           
+        return response()->json([
+         'message'=>'your notifications ',
+          'notification'=>$notification
+          ],200);
+    }
+        
 }
