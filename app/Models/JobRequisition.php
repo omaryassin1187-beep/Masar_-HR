@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class JobRequisition extends Model
 {
-        protected $fillable = [
+    protected $fillable = [
         'department_id',
         'requested_by',
         'job_title',
@@ -17,33 +18,47 @@ class JobRequisition extends Model
         'experience',
         'status',
     ];
+
+    protected $casts = [
+        'experience' => 'integer',
+        'status' => 'string',
+    ];
+
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'department_id');
     }
+
     public function requestedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by');
     }
+
     public function skills(): BelongsToMany
-{
-    return $this->belongsToMany(Skill::class, 'job_required_skills')
-                ->using(JobRequiredSkill::class);
-}
+    {
+        return $this->belongsToMany(Skill::class, 'job_required_skills')
+            ->using(JobRequiredSkill::class)
+            ->withTimestamps();
+
+    }
+
     public function jobPosting(): HasOne
     {
         return $this->hasOne(JobPosting::class, 'job_requisition_id');
     }
 
-
-
-    /* public function scopePending($query)
+    public function scopePending(Builder $query): Builder
     {
         return $query->where('status', 'pending');
     }
-    public function scopeApproved($query)
+
+    public function scopeApproved(Builder $query): Builder
     {
         return $query->where('status', 'approved');
-    } */
+    }
 
+    public function scopeRejected(Builder $query): Builder
+    {
+        return $query->where('status', 'rejected');
+    }
 }

@@ -18,5 +18,4 @@ class Department extends Model
     {
         return $this->hasMany(JobRequisition::class, 'department_id');
     }
-
 }

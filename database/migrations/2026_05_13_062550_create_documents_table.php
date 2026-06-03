@@ -16,6 +16,7 @@ return new class extends Migration
             $table->morphs('owner');
             $table->string('file_name');
             $table->string('file_path');
+            $table->enum('type', ['cv', 'personal', 'professional']);
             $table->timestamps();
         });
     }
@@ -26,5 +27,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('documents');
+
     }
 };

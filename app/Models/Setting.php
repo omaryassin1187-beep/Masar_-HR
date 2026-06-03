@@ -23,10 +23,12 @@ class Setting extends Model
         'currency',
         'grace_period',
     ];
+
     protected $casts = [
         'weekend_days' => 'array',
     ];
-    //تطبيق فكرة ال singleton
+
+    // تطبيق فكرة ال singleton
     public static function instance(): static
     {
         return static::firstOrCreate(
@@ -34,20 +36,20 @@ class Setting extends Model
             self::defaults()
         );
     }
+
     public static function defaults(): array
     {
         return [
-            'probation_period_days'   => 90,
-            'weekend_days'            => ['friday', 'saturday'],
-            'jurisdiction'            => null,
+            'probation_period_days' => 90,
+            'weekend_days' => ['friday', 'saturday'],
+            'jurisdiction' => null,
             'termination_notice_days' => 30,
-            'expected_check_in'       => '09:00:00',
-            'expected_check_out'      => '13:00:00',
-            'sick_leave_days'         => 15,
-            'annual_leave_days'       => 14,
-            'currency'                => 'SYP',
-            'grace_period'            => 15,
+            'expected_check_in' => '09:00:00',
+            'expected_check_out' => '13:00:00',
+            'sick_leave_days' => 15,
+            'annual_leave_days' => 14,
+            'currency' => 'SYP',
+            'grace_period' => 15,
         ];
     }
-
 }

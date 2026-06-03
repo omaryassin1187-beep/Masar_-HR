@@ -16,11 +16,13 @@ class Offer extends Model
         'working_hour_per_day',
         'status',
     ];
+
     protected $casts = [
         'weekend_days' => 'array',
-        'start_date'   => 'date',
-        'hour_price'   => 'decimal:2',
+        'start_date' => 'date',
+        'hour_price' => 'decimal:2',
     ];
+
     public function candidate(): BelongsTo
     {
         return $this->belongsTo(Candidate::class, 'candidate_id');

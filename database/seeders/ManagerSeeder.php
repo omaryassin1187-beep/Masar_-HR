@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 
 class ManagerSeeder extends Seeder
 {
@@ -13,27 +12,27 @@ class ManagerSeeder extends Seeder
      */
     public function run(): void
     {
-        $marketingManager=User::create([
-        'full_name'=>'ahmadMarketing',
-        'email'=>'omar13@gmail.com',
-        'dep_id'=>3,
-        'password'=>'22222222'
+        $marketingManager = User::create([
+            'full_name' => 'ahmadMarketing',
+            'email' => 'omar13@gmail.com',
+            'dep_id' => 3,
+            'password' => '22222222',
         ]);
         $marketingManager->assignRole('manager');
 
-       $backendManager=User::create([
-        'full_name'=>'ahmadBack',
-        'email'=>'omar14@gmail.com',
-        'dep_id'=>4,
-        'password'=>'33333333'
+        $backendManager = User::create([
+            'full_name' => 'ahmadBack',
+            'email' => 'omar14@gmail.com',
+            'dep_id' => 4,
+            'password' => '33333333',
         ]);
         $backendManager->assignRole('manager');
 
-        $frontendManager=User::create([
-        'full_name'=>'ahmadFront',
-        'email'=>'omar15@gmail.com',
-        'dep_id'=>5,
-        'password'=>'44444444'
+        $frontendManager = User::create([
+            'full_name' => 'ahmadFront',
+            'email' => 'omar15@gmail.com',
+            'dep_id' => 5,
+            'password' => '44444444',
         ]);
         $frontendManager->assignRole('manager');
 
