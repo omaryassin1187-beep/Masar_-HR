@@ -18,13 +18,16 @@ use Exception;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\Leave_Requests\LeaveRequestApprovedNotification;
 use App\Notifications\Leave_Requests\LeaveRequestRejectedNotification;
+use App\Policies\LeaveRequestPolicy;
+use App\Services\LeaveRequestService;
 use Illuminate\Support\Facades\Gate;
 
 class LeaveRequestController extends Controller
 {
 
-     public function __construct(
-        protected AttendanceService $attendanceService
+    public function __construct(
+                protected AttendanceService $attendanceService,
+                protected LeaveRequestService $leaveRequestService
     ) {}
 
 
@@ -50,13 +53,13 @@ class LeaveRequestController extends Controller
         return response()->json([ 'message'=>$request->date.' This date is holiday']);
        }
 
-        $this->attendanceService->validateBalance(
+        $this->leaveRequestService->validateBalance(
             Auth::user(),
             $validatedData['type'],
             $validatedData['days_count']
         );
 
-        if ($this->attendanceService->hasLeaveRequestOverlap($validatedData)) 
+        if ($this->leaveRequestService->hasLeaveRequestOverlap($validatedData)) 
         {
             return response()->json([
                 'message' => 'The requested leave period overlaps with an existing leave request.'
@@ -77,7 +80,7 @@ class LeaveRequestController extends Controller
     public function show(string $id)
     {
            $leaveRequest= LeaveRequest::findOrFail($id);
-           $this->attendanceService->checkUserAuthrization($leaveRequest);  
+           $this->leaveRequestService->checkUserAuthrization($leaveRequest);  
            return response()->json(new LeaveRequestResource($leaveRequest),200);
     }
 
@@ -85,7 +88,7 @@ class LeaveRequestController extends Controller
     public function update(UpdateLeaveRequestRequest $request, string $id)
     {
            $leaveRequest= LeaveRequest::findOrFail($id);
-           $this->attendanceService->checkUserAuthrization($leaveRequest); 
+           $this->leaveRequestService->checkUserAuthrization($leaveRequest); 
            if ($leaveRequest->status !== 'pending') {
             return response()->json([
                 'message' => 'Cannot update leave request. Only pending requests can be modified.'
@@ -93,7 +96,7 @@ class LeaveRequestController extends Controller
          }
          
            $leaveRequest->update($request->validated());
-           $this->attendanceService->notifyManagerAboutUpdate($leaveRequest); 
+           $this->leaveRequestService->notifyManagerAboutUpdate($leaveRequest); 
            return response()->json([
             'message' => 'Leave request updated successfully.',
             'data'    =>  new LeaveRequestResource($leaveRequest),
@@ -107,7 +110,7 @@ class LeaveRequestController extends Controller
     {
         $leaveRequest = LeaveRequest::findOrFail($id);
 
-        $this->attendanceService->checkUserAuthrization($leaveRequest);
+        $this->leaveRequestService->checkUserAuthrization($leaveRequest);
 
         if ($leaveRequest->status !== 'pending') {
             return response()->json([
@@ -116,7 +119,7 @@ class LeaveRequestController extends Controller
         }
 
         $leaveRequest->delete();
-        $this->attendanceService->notifyManagerAboutDelete($leaveRequest); 
+        $this->leaveRequestService->notifyManagerAboutDelete($leaveRequest); 
         return response()->json([
             'message' => 'Deleted successfully'
         ]);
@@ -168,30 +171,39 @@ class LeaveRequestController extends Controller
     }
 
 
-    public function getPendingDepartmentLeaveRequests()
+     public function getDepartmentLeaveRequests(Request $request)
     {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,approved,rejected'
+        ]);
+
         $manager = auth()->user();
 
         $leaveRequests = LeaveRequest::with('user')
-            ->where('status', 'pending')
+            ->where('status', $validated['status'])
             ->whereHas('user', function ($query) use ($manager) {
 
                 $query->where('dep_id', $manager->dep_id)
-                      ->role('employee');
+                    ->role('employee');
+
             })
             ->get();
 
         return LeaveRequestResource::collection($leaveRequests);
     }
 
-    public function getMyApprovedLeaveRequests()
+    public function getMyLeaveRequests(Request $request)
     {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,approved,rejected',
+        ]);
+
         $user = auth()->user();
 
         $leaveRequests = LeaveRequest::with('user')
-            ->where('status', 'approved')
             ->where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')  
+            ->where('status', $validated['status'])
+            ->orderBy('created_at', 'desc')
             ->get();
 
         return LeaveRequestResource::collection($leaveRequests);
@@ -210,5 +222,62 @@ class LeaveRequestController extends Controller
             ->get();
 
         return LeaveRequestResource::collection($leaveRequests);
+    }
+
+    public function getEmployeeLeaveBalances(string $userId)
+    {
+        $employee = User::with('leaveBalance')->findOrFail($userId);
+
+        Gate::authorize('viewEmployeeLeaves', $employee);
+        return response()->json([
+            'user_id' => $employee->id,
+            'leave_balances' => $employee->leaveBalance->map(function ($balance) {
+
+                return [
+                    'leave_type' => $balance->leave_type,
+                    'total_days' => $balance->total_days,
+                    'used_days' => $balance->used_days,
+                    'remaining_days' => $balance->total_days !== null
+                        ? $balance->total_days - $balance->used_days
+                        : null,
+                ];
+            }),
+        ]);
+    }
+
+    public function getAllLeaveRequests(Request $request)
+    {
+        $validated = $request->validate([
+            'status' => 'nullable|in:pending,approved,rejected',
+            'dep_id' => 'nullable|exists:departments,id',
+            'from' => 'nullable|date',
+            'to' => 'nullable|date|after_or_equal:from',
+        ]);
+
+        $leaveRequests = LeaveRequest::with('user');
+
+        if (isset($validated['status'])) {
+            $leaveRequests->where('status', $validated['status']);
+        }
+
+        if (isset($validated['dep_id'])) {
+            $leaveRequests->whereHas('user', function ($query) use ($validated) {
+                $query->where('dep_id', $validated['dep_id']);
+            });
+        }
+
+        if (isset($validated['from'])) {
+            $leaveRequests->whereDate('created_at', '>=', $validated['from']);
+        }
+
+        if (isset($validated['to'])) {
+            $leaveRequests->whereDate('created_at', '<=', $validated['to']);
+        }
+
+        return LeaveRequestResource::collection(
+            $leaveRequests
+                ->latest()
+                ->get()
+        );
     }
 }

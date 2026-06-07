@@ -3,20 +3,12 @@
 namespace App\Services;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use App\Models\Attendance_Leaves\Holiday;
 use App\Models\Attendance_Leaves\HourlyLeaveEquest;
 use App\Models\Attendance_Leaves\LeaveRequest;
-use App\Notifications\Leave_Requests\DeletedHourlyLeaveRequestNotification;
-use App\Notifications\Leave_Requests\DeletedLeaveRequestNotification;
+use App\Models\Attendance_Leaves\Attendance;
+use App\Models\Setting;
 use Carbon\Carbon;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Auth\Access\AuthorizationException;
-use App\Notifications\Leave_Requests\UpdatedLeaveRequestNotification;
-use App\Notifications\Leave_Requests\HourlyLeaveRequestSubmittedNotification;
-use App\Notifications\Leave_Requests\UpdatedHourlyLeaveRequestNotification;
-use Illuminate\Support\Facades\Notification;
 
 
 class AttendanceService
@@ -40,176 +32,149 @@ class AttendanceService
         return true;
     }
 
-    public function validateBalance(User $user, string $type, int $daysCount): void
+
+    public function hasApprovedLeave(User $user,Carbon|string $date): bool
     {
-        $balance = $user->leaveBalance()
-            ->where('leave_type', $type)
-            ->first();
 
-        $remaining_days = $balance?->total_days -  $balance?->used_days;   
-        $availableDays = $remaining_days ?? 0;
+       $date = Carbon::parse($date);
 
-        if ($availableDays < $daysCount) {
-
-            throw ValidationException::withMessages([
-                'days_count' => "You only have {$availableDays} {$type} leave days remaining."
-            ]);
-        }
+       return LeaveRequest::query()
+           ->where('user_id', $user->id)
+           ->where('status', 'approved')
+           ->where('start_date', '<=', $date)
+           ->whereRaw(
+               'DATE_ADD(start_date, INTERVAL days_count - 1 DAY) >= ?',
+               [$date->toDateString()]
+           )
+           ->exists();
     }
 
-    public function calculateLeaveDates(string $startDate,int $daysCount): array 
+
+    public function getAllowedCheckInTime(User $user,Carbon|string $date,$settings): Carbon
     {
 
-        $remaining = $daysCount;
+        $date = Carbon::parse($date);
 
-        $current = Carbon::parse($startDate);
 
-        while ($remaining > 0) {
+        $allowedTime = Carbon::parse(
+            $date->format('Y-m-d') . ' ' . $settings->expected_check_in
+        );
 
-            if ($this->isWorkingDay($current)) {
-                $remaining--;
-            }
+        $hourlyLeave = HourlyLeaveEquest::query()
+            ->where('user_id', $user->id)
+            ->whereDate('date', $date)
+            ->where('status', 'approved')
+            ->first();
 
-            if ($remaining > 0) {
-                $current->addDay();
+        if ($hourlyLeave) {
+
+            $leaveEnd = Carbon::parse(
+                $date->format('Y-m-d') . ' ' . $hourlyLeave->end_time
+            );
+
+            if ($leaveEnd->gt($allowedTime)) {
+                $allowedTime = $leaveEnd;
             }
         }
 
-        $endDate = $current->copy();
+        return $allowedTime->addMinutes(
+            $settings->grace_period
+        );
+    }
 
-        $returnDate = $current->copy()->addDay();
 
-        while (!$this->isWorkingDay($returnDate)) {
-            $returnDate->addDay();
+    public function calculateEarlyLeaveMinutes(Attendance $attendance,Carbon|string $date,Setting $settings): int 
+    {
+
+        if (!$attendance->check_out) {
+            return 0;
+        }
+
+        $date = Carbon::parse($date);
+
+        $expectedCheckOut = Carbon::parse(
+            $date->format('Y-m-d') . ' ' . $settings->expected_check_out
+        );
+
+        $hourlyLeave = HourlyLeaveEquest::query()
+            ->where('user_id', $attendance->user_id)
+            ->whereDate('date', $date)
+            ->where('status', 'approved')
+            ->first();
+
+        if ($hourlyLeave) {
+
+            $leaveStart = Carbon::parse(
+                $date->format('Y-m-d') . ' ' . $hourlyLeave->start_time
+            );
+
+            if ($leaveStart->lt($expectedCheckOut)) {
+                $expectedCheckOut = $leaveStart;
+            }
+        }
+
+        $checkOut = Carbon::parse(
+            $date->format('Y-m-d') . ' ' . $attendance->check_out
+        );
+
+        if ($checkOut->gte($expectedCheckOut)) {
+            return 0;
+        }
+
+        return $checkOut->diffInMinutes($expectedCheckOut);
+    }
+
+
+    public function resolveAttendance(Attendance $attendance,Setting $settings): array
+    {
+        $date = Carbon::parse($attendance->date);
+
+        if ($this->hasApprovedLeave($attendance->user, $date)) {
+            return [
+                'status' => 'leave',
+                'late_minutes' => 0,
+                'early_leave_minutes' => 0,
+            ];
+        }
+
+        if (!$attendance->check_in) {
+            return [
+                'status' => 'absent',
+                'late_minutes' => 0,
+                'early_leave_minutes' => 0,
+            ];
+        }
+
+        $allowedCheckIn = $this->getAllowedCheckInTime(
+            $attendance->user,
+            $date,$settings
+        );
+
+        $checkIn = Carbon::parse(
+            $date->format('Y-m-d') . ' ' . $attendance->check_in
+        );
+
+        $lateMinutes = 0;
+        $status = 'present';
+
+        if ($checkIn->gt($allowedCheckIn)) {
+            $status = 'late';
+
+            $lateMinutes = $allowedCheckIn
+                ->diffInMinutes($checkIn);
         }
 
         return [
-            'end_date' => $endDate->toDateString(),
-            'return_date' => $returnDate->toDateString(),
+            'status' => $status,
+            'late_minutes' => $lateMinutes,
+            'early_leave_minutes' => $this->calculateEarlyLeaveMinutes(
+                $attendance,
+                $date,
+                 $settings
+            ),
         ];
     }
 
-    
-
-    public function hasLeaveRequestOverlap(array $validatedData, ?int $ignoreId = null): bool
-    {
-        $newStartDate = $validatedData['start_date'];
-
-        $newEndDate = $this->calculateLeaveDates(
-            $validatedData['start_date'],
-            $validatedData['days_count']
-        )['end_date'];
-
-        $query = LeaveRequest::query()
-            ->where('user_id', $validatedData['user_id'])
-            ->whereIn('status', ['pending', 'approved']);
-
-        if ($ignoreId) {
-            $query->where('id', '!=', $ignoreId);
-        }
-
-        $leaveRequests = $query->get();
-
-        foreach ($leaveRequests as $leaveRequest) {
-
-            $existingEndDate = $this->calculateLeaveDates(
-                $leaveRequest->start_date,
-                $leaveRequest->days_count
-            )['end_date'];
-
-            if (
-                Carbon::parse($leaveRequest->start_date) <= Carbon::parse($newEndDate)
-                &&
-                Carbon::parse($existingEndDate) >= Carbon::parse($newStartDate)
-            ) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public function checkUserAuthrization($leaveRequest)
-    {
-        if (Auth::user()->id !== $leaveRequest->user_id) {
-            throw new AuthorizationException;
-        }
-    }
-
-    public function notifyManagerAboutUpdate($leaveRequest)
-    {
-        $user=Auth::user();
-        $manager =  $manager = User::role('manager')
-                ->where('dep_id', $user->dep_id)
-                ->get();
-
-       Notification::send( $manager, new UpdatedLeaveRequestNotification($leaveRequest));
-    }
-
-    public function notifyManagerAboutDelete($leaveRequest)
-    {
-        $user=Auth::user();
-        $manager = User::role('manager')
-                ->where('dep_id', $user->dep_id)
-                ->get();
-
-        Notification::send( $manager, new DeletedLeaveRequestNotification($leaveRequest));
-    }
-
-
-
-    public function notifyManagerAboutStoreHourlyLeaveRequest($HourlyLeaveRequest)
-    {
-        $user=Auth::user();
-        if ($user->hasRole('employee')){
-        $manager = User::role('manager')
-                ->where('dep_id', $user->dep_id)
-                ->get();
-
-        Notification::send( $manager, new HourlyLeaveRequestSubmittedNotification($HourlyLeaveRequest));
-        }
-    }
-
-    public function notifyManagerAboutUpdateHourlyLeaveRequest($hourlyLeaveRequest)
-    {
-        $user=Auth::user();
-        $manager =  $manager = User::role('manager')
-                ->where('dep_id', $user->dep_id)
-                ->get();
-
-       Notification::send( $manager, new UpdatedHourlyLeaveRequestNotification($hourlyLeaveRequest));
-    }
-
-    public function notifyManagerAboutDeletedHourlyLeaveRequest($hourlyLeaveRequest)
-    {
-        $user=Auth::user();
-        $manager = User::role('manager')
-                ->where('dep_id', $user->dep_id)
-                ->get();
-
-        Notification::send( $manager, new DeletedHourlyLeaveRequestNotification($hourlyLeaveRequest));
-    }
-
-    public function hasHourlyLeaveOverlap(array $validatedData, ?int $ignoreId = null): bool
-    {
-        $startTime = $validatedData['start_time'];
-        $endTime   = $validatedData['end_time'];
-
-        $query = HourlyLeaveEquest::query()
-            ->where('user_id', $validatedData['user_id'])
-            ->whereDate('date', $validatedData['date'])
-            ->whereIn('status', ['pending', 'approved'])
-            ->where(function ($query) use ($startTime, $endTime) {
-                $query->where('start_time', '<', $endTime)
-                    ->where('end_time', '>', $startTime);
-            });
-
-        if ($ignoreId) {
-            $query->where('id', '!=', $ignoreId);
-        }
-
-        return $query->exists();
-    }
 }
 
 

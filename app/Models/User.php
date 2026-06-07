@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Models\Attendance_Leaves\Attendance;
 use App\Models\Attendance_Leaves\LeaveBalance;
 use App\Models\Attendance_Leaves\LeaveRequest;
 use App\Models\Attendance_Leaves\HourlyLeaveEquest;
@@ -87,5 +88,9 @@ class User extends Authenticatable
         return $this->hasMany(HourlyLeaveEquest::class);
     }
 
+    public function attendance()
+    {
+        return $this->hasMany(Attendance::class);   
+    }
      
 }

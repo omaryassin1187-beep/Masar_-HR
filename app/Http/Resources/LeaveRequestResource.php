@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Services\AttendanceService;
+use App\Services\LeaveRequestService;
 
 class LeaveRequestResource extends JsonResource
 {
@@ -17,7 +18,7 @@ class LeaveRequestResource extends JsonResource
 
     public function toArray(Request $request): array
     {
-        $dates = app(AttendanceService::class)
+        $dates = app(LeaveRequestService::class)
             ->calculateLeaveDates(
                 $this->start_date,
                 $this->days_count

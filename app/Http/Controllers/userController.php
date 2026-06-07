@@ -28,7 +28,7 @@ class userController extends Controller
             ], 404);
         }
         $user->password = Hash::make($request->password);
-        $user->status='active';
+       // $user->status='active';
         $user->save();
 
         return response()->json([
@@ -86,14 +86,14 @@ class userController extends Controller
         ], 200);
     }
 
-        public function getUserById($id)
+    public function getUserById($id)
     {
         $user= User::findOrFail($id);
         return new UserResource($user);
     }
 
     
-        public function getEmployeesByDepartment($depId)
+    public function getEmployeesByDepartment($depId)
     {
         $emplyees= User::role('employee')
                     ->where('dep_id', $depId)
@@ -101,7 +101,7 @@ class userController extends Controller
           return UserResource::collection($emplyees);
     }
 
-        public function getManagerEmployees()
+    public function getManagerEmployees()
     {
         $manager = auth()->user();
 
@@ -112,14 +112,14 @@ class userController extends Controller
         return UserResource::collection($employees);
     }
     
-        public function getAllEmployees()
+    public function getAllEmployees()
     {
          $emplyees= User::role('employee')->get();
          return UserResource::collection($emplyees);
     }
 
 
-        public function getNotifications(): JsonResponse
+    public function getNotifications(): JsonResponse
     {
         $notifications = Auth::user()->notifications;
 
@@ -129,7 +129,7 @@ class userController extends Controller
         ], 200);
     }
 
-     public function markAsRead($id)
+    public function markAsRead($id)
    {
        $notification=Auth()->user()->notifications()->findORFail($id) ;
        $notification->markAsRead();
@@ -152,6 +152,43 @@ class userController extends Controller
          'message'=>'your notifications ',
           'notification'=>$notification
           ],200);
+    }
+
+    public function searchManagerEmployees(Request $request)
+    {
+        $search = trim($request->search);
+
+        $manager = auth()->user();
+
+        $employees = User::role('employee')
+            ->where('dep_id', $manager->dep_id)
+            ->where('full_name', 'like', "%{$search}%")
+            ->get();
+
+        // إذا لم يجد نتائج مطابقة
+        if ($employees->isEmpty()) {
+
+            $employees = User::role('employee')
+                ->where('dep_id', $manager->dep_id)
+                ->get()
+                ->map(function ($employee) use ($search) {
+
+                    similar_text(
+                        strtolower($search),
+                        strtolower($employee->full_name),
+                        $percent
+                    );
+
+                    $employee->similarity = $percent;
+
+                    return $employee;
+                })
+                ->sortByDesc('similarity')
+                ->take(5)
+                ->values();
+        }
+
+        return response()->json($employees);
     }
         
 }

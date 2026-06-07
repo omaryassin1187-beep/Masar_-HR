@@ -11,10 +11,35 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('attendances', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+       Schema::create('attendances', function (Blueprint $table) {
+
+        $table->id();
+
+        $table->foreignId('user_id')
+            ->constrained()
+            ->cascadeOnDelete();
+
+        $table->date('date');
+
+        $table->time('check_in')->nullable();
+
+        $table->time('check_out')->nullable();
+
+        $table->enum('status', [
+            'present',
+            'late',
+            'leave',
+            'absent'
+        ])->default('absent');
+
+        $table->integer('late_minutes')->default(0);
+
+        $table->integer('early_leave_minutes')->default(0);
+
+        $table->timestamps();
+
+        $table->unique(['user_id', 'date']);
+});
     }
 
     /**
