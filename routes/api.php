@@ -24,7 +24,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::middleware(['auth:sanctum', 'role:manager'])->group(function () {
     Route::post('/job-requisitions', [JobRequisitionController::class, 'store']);
-
     Route::patch('/interviews/{interview}/result', [InterviewController::class, 'updateResult']);
 });
 
