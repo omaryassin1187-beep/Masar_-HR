@@ -21,7 +21,7 @@ return new class extends Migration
     $table->time('expected_check_out')->default('17:00:00');
     $table->integer('sick_leave_days')->default(10);
     $table->integer('annual_leave_days')->default(14);
-    $table->string('currency', 3)->default('USD');
+    $table->string('currency', 3)->default('SYP');
     $table->integer('grace_period')->default(15);
     $table->timestamps();
         });

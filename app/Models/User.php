@@ -3,6 +3,11 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Models\Attendance_Leaves\Attendance;
+use App\Models\Attendance_Leaves\LeaveBalance;
+use App\Models\Attendance_Leaves\LeaveRequest;
+use App\Models\Attendance_Leaves\HourlyLeaveEquest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -51,8 +56,41 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function profile()
+    {
+       return $this->hasOne(Profile::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'dep_id');
+    }
+
+    
     public function documents(): MorphMany
-{
-    return $this->morphMany(Document::class, 'owner');
-}
+    {
+        return $this->morphMany(Document::class, 'owner');
+    }
+
+    public function leaveBalance()
+    {
+       return $this->hasMany(LeaveBalance::class);
+    }
+
+    public function leaveRequest()
+    {
+       return $this->hasMany(LeaveRequest::class);
+    }
+
+    public function hourlyLeaveRequest()
+    {
+        return $this->hasMany(HourlyLeaveEquest::class);
+    }
+
+    public function attendance()
+    {
+        return $this->hasMany(Attendance::class);   
+    }
+     
 }

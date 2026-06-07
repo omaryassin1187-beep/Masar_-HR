@@ -20,5 +20,27 @@ class HrSeeder extends Seeder
         'password'=>'11111111'
         ]);
         $HR->assignRole('HR');
+
+                 $HR->leaveBalance()->createMany([
+
+            [
+                'leave_type' => 'annual',
+                'used_days' => 0,
+                'total_days'=>30,
+            ],
+
+            [
+                'leave_type' => 'sick',
+                 'used_days' => 0,
+                'total_days'=>15
+            ],
+
+            [
+                'leave_type' => 'unpaid',
+                'used_days' => 0,
+                'total_days'=>null
+            ],
+
+        ]);
     }
 }
