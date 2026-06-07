@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 
 class AdminSeeder extends Seeder
 {
@@ -13,11 +12,11 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin=User::create([
-        'full_name'=>'ceo',
-        'email'=>'omar12@gmail.com',
-        'dep_id'=>1,
-        'password'=>'00000000'
+        $admin = User::create([
+            'full_name' => 'ceo',
+            'email' => 'omar12@gmail.com',
+            'dep_id' => 1,
+            'password' => '00000000',
         ]);
         $admin->assignRole('admin');
          $admin->leaveBalance()->createMany([

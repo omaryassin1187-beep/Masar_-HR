@@ -16,11 +16,13 @@ class Offer extends Model
         'working_hour_per_day',
         'status',
     ];
+
     protected $casts = [
         'weekend_days' => 'array',
-        'start_date'   => 'date',
-        'hour_price'   => 'decimal:2',
+        'start_date' => 'date',
+        'hour_price' => 'decimal:2',
     ];
+
     public function candidate(): BelongsTo
     {
         return $this->belongsTo(Candidate::class, 'candidate_id');
@@ -31,7 +33,7 @@ class Offer extends Model
         return $this->belongsTo(JobPosting::class, 'job_posting_id');
     }
 
-    /*   public function estimatedMonthlySalary(): float
+    public function estimatedMonthlySalary(): float
     {
         $weekendCount  = count($this->weekend_days ?? []);
         $workingDays   = 30 - ($weekendCount * 4); // تقريبي
@@ -40,6 +42,9 @@ class Offer extends Model
     public function isAccepted(): bool
     {
         return $this->status === 'accepted';
-    } */
-
+    }
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
 }
