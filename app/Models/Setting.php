@@ -29,27 +29,34 @@ class Setting extends Model
     ];
 
     // تطبيق فكرة ال singleton
+    //تطبيق فكرة ال singleton
+    protected static $instance;
+
     public static function instance(): static
     {
-        return static::firstOrCreate(
-            ['id' => 1],
-            self::defaults()
-        );
+        if (!static::$instance) {
+            static::$instance = static::firstOrCreate(
+                ['id' => 1],
+                self::defaults()
+            );
+        }
+        
+        return static::$instance;
     }
-
+    
     public static function defaults(): array
     {
         return [
-            'probation_period_days' => 90,
-            'weekend_days' => ['friday', 'saturday'],
-            'jurisdiction' => null,
+            'probation_period_days'   => 90,
+            'weekend_days'            => ['friday', 'saturday'],
+            'jurisdiction'            => 'Syrian Law',
             'termination_notice_days' => 30,
-            'expected_check_in' => '09:00:00',
-            'expected_check_out' => '17:00:00',
-            'sick_leave_days' => 15,
-            'annual_leave_days' => 14,
-            'currency' => 'SYP',
-            'grace_period' => 15,
+            'expected_check_in'       => '09:00:00',
+            'expected_check_out'      => '17:00:00',
+            'sick_leave_days'         => 10,
+            'annual_leave_days'       => 14,
+            'currency'                => 'SYP',
+            'grace_period'            => 15,
         ];
     }
 }

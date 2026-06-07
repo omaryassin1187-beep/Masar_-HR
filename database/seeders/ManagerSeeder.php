@@ -19,6 +19,28 @@ class ManagerSeeder extends Seeder
             'password' => '22222222',
         ]);
         $marketingManager->assignRole('manager');
+         $marketingManager->leaveBalance()->createMany([
+
+            [
+                'leave_type' => 'annual',
+                'used_days' => 0,
+                'total_days'=>30,
+            ],
+
+            [
+                'leave_type' => 'sick',
+                 'used_days' => 0,
+                'total_days'=>15
+            ],
+
+            [
+                'leave_type' => 'unpaid',
+                'used_days' => 0,
+                'total_days'=>null
+            ],
+
+        ]);
+
 
         $backendManager = User::create([
             'full_name' => 'ahmadBack',
@@ -27,6 +49,28 @@ class ManagerSeeder extends Seeder
             'password' => '33333333',
         ]);
         $backendManager->assignRole('manager');
+        $backendManager->leaveBalance()->createMany([
+
+                    [
+                        'leave_type' => 'annual',
+                        'used_days' => 0,
+                        'total_days'=>30,
+                    ],
+
+                    [
+                        'leave_type' => 'sick',
+                        'used_days' => 0,
+                        'total_days'=>15
+                    ],
+
+                    [
+                        'leave_type' => 'unpaid',
+                        'used_days' => 0,
+                        'total_days'=>null
+                    ],
+
+                ]);
+
 
         $frontendManager = User::create([
             'full_name' => 'ahmadFront',
@@ -35,6 +79,26 @@ class ManagerSeeder extends Seeder
             'password' => '44444444',
         ]);
         $frontendManager->assignRole('manager');
+        $frontendManager->leaveBalance()->createMany([
 
+                    [
+                        'leave_type' => 'annual',
+                        'used_days' => 0,
+                        'total_days'=>30,
+                    ],
+
+                    [
+                        'leave_type' => 'sick',
+                        'used_days' => 0,
+                        'total_days'=>15
+                    ],
+
+                    [
+                        'leave_type' => 'unpaid',
+                        'used_days' => 0,
+                        'total_days'=>null
+                    ],
+
+                ]);
     }
 }

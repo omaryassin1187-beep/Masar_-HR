@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
             ManagerSeeder::class,
             SettingSeeder::class,
             SkillSeeder::class,
+            EmployeeSeeder::class,
+            HolidaySeeder::class
         ]);
 
     }
