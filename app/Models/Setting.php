@@ -45,7 +45,7 @@ class Setting extends Model
             'jurisdiction' => null,
             'termination_notice_days' => 30,
             'expected_check_in' => '09:00:00',
-            'expected_check_out' => '13:00:00',
+            'expected_check_out' => '17:00:00',
             'sick_leave_days' => 15,
             'annual_leave_days' => 14,
             'currency' => 'SYP',

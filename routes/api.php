@@ -1,9 +1,11 @@
 <?php
 
-use App\Http\Controllers\Reqruitment\CandidateController;
 use App\Http\Controllers\Reqruitment\InterviewController;
+use App\Http\Controllers\Reqruitment\CandidateController;
 use App\Http\Controllers\Reqruitment\JobPostingController;
 use App\Http\Controllers\Reqruitment\JobRequisitionController;
+use App\Http\Controllers\Reqruitment\OfferController;
+use App\Http\Controllers\SettingController;
 use App\Http\Controllers\userController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +27,7 @@ Route::middleware(['auth:sanctum', 'role:manager'])->group(function () {
 
     Route::patch('/interviews/{interview}/result', [InterviewController::class, 'updateResult']);
 });
+
 Route::middleware(['auth:sanctum', 'role:HR'])->group(function () {
     Route::post('/job-requisitions/{job_requisition}/approve', [JobRequisitionController::class, 'approve']);
 
@@ -33,8 +36,8 @@ Route::middleware(['auth:sanctum', 'role:HR'])->group(function () {
     Route::put('/HRjob-postings/{jobPosting}', [JobPostingController::class, 'update']);
     Route::patch('/HRjob-postings/{jobPosting}/close', [JobPostingController::class, 'close']);
     Route::delete('/HRjob-postings/{jobPosting}', [JobPostingController::class, 'destroy']);
-    Route::get('/job-postings/{jobPosting}/candidates', [CandidateController::class, 'index']);
 
+    Route::get('/job-postings/{jobPosting}/candidates', [CandidateController::class, 'index']);
     Route::get('/candidates/{candidate}', [CandidateController::class, 'show']);
     // تحميل السيرة الذاتية للمرشح
     Route::get('/candidates/{candidate}/cv', [CandidateController::class, 'downloadCv'])->name('candidates.cv');
@@ -42,7 +45,17 @@ Route::middleware(['auth:sanctum', 'role:HR'])->group(function () {
 
     Route::get('/job-postings/{jobPosting}/candidates/interview', [InterviewController::class, 'eligibleCandidates']);
     Route::post('/job-postings/{jobPosting}/interviews', [InterviewController::class, 'store']);
+    Route::get('/job-postings/{jobPosting}/interviews', [InterviewController::class, 'index']);
+
+    Route::post('/job-postings/{jobPosting}/offers', [OfferController::class, 'store']);
+    Route::get('/job-postings/{jobPosting}/offers',  [OfferController::class, 'index']);
 });
+
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('settings',   [SettingController::class, 'show']);
+    Route::patch('settings', [SettingController::class, 'update']);
+});
+
 
 Route::middleware(['auth:sanctum', 'role:HR|admin'])->group(function () {
     Route::get('/job-requisitions/all', [JobRequisitionController::class, 'getAllRequisitions']);
@@ -52,13 +65,10 @@ Route::middleware(['auth:sanctum', 'role:manager|HR'])
     ->group(
         function () {
             Route::get('/job-requisitions', [JobRequisitionController::class, 'index']);
-
             Route::get('/job-postings/{jobPosting}/interviews/ranking', [InterviewController::class, 'ranking']);
             Route::post('/job-postings/{jobPosting}/interviews/ranking', [InterviewController::class, 'submitRanking']);
             Route::get('/interviews/{interview}', [InterviewController::class, 'show']);
             Route::patch('/interviews/{interview}/cancel', [InterviewController::class, 'cancel']);
-            Route::get('/job-postings/{jobPosting}/interviews', [InterviewController::class, 'index']);
-
         }
     );
 
@@ -77,3 +87,8 @@ Route::prefix('job-postings')->group(function () {
     Route::get('/{jobPosting}', [JobPostingController::class, 'showPublic']);
     Route::post('/{jobPosting}/apply', [CandidateController::class, 'store']);
 });
+
+
+//
+Route::get('/offers/{offer}/respond', [OfferController::class, 'respond'])
+    ->name('emails.respond');

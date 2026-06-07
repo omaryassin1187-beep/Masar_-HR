@@ -49,8 +49,8 @@ class InterviewService
                 'location_details' => $data['location_details'],
                 'status' => 'scheduled',
             ]);
-            // Mail::to($interview->candidate->email)
-            //     ->send(new CandidateInterviewScheduled($interview));
+             Mail::to($interview->candidate->email)
+                ->send(new CandidateInterviewScheduled($interview));
 
             $interview->load(['candidate', 'jobPosting.requisition', 'interviewer']);
             $interview->candidate->update(['status' => 'interviewed']);
@@ -64,6 +64,7 @@ class InterviewService
     //  Manager يسجّل نتيجة المقابلة
     public function recordResult(Interview $interview, array $data): Interview
     {
+
         $interview->update([
             'rate' => $data['rate'],
             'notes' => $data['notes'] ?? null,

@@ -15,13 +15,13 @@ return new class extends Migration
             $table->id();
             $table->integer('probation_period_days')->default(90);
             $table->json('weekend_days')->default('["friday","saturday"]');
-            $table->string('jurisdiction', 50)->nullable();
+            $table->string('jurisdiction', 100)->nullable();
             $table->integer('termination_notice_days')->default(30);
             $table->time('expected_check_in')->default('09:00:00');
             $table->time('expected_check_out')->default('17:00:00');
-            $table->integer('sick_leave_days')->default(10);
+            $table->integer('sick_leave_days')->default(15);
             $table->integer('annual_leave_days')->default(14);
-            $table->string('currency', 3)->default('USD');
+            $table->string('currency', 3)->default('SYP');
             $table->integer('grace_period')->default(15);
             $table->timestamps();
         });

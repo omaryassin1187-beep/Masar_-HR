@@ -33,12 +33,12 @@ class StoreInterviewRequest extends FormRequest
                     if ($time < $settings->expected_check_in || $time > $settings->expected_check_out) {
                         $fail('Interview must be scheduled between ' . $settings->expected_check_in . ' and ' . $settings->expected_check_out);
                     }
-                    // $weekendDays = json_decode($settings->weekend_days, true); // ["friday", "saturday"]
-                    // $dayName = strtolower($date->format('l')); // "friday"
+                    $weekendDays = $settings->weekend_days; // بالفعل array من الـ cast
+                    $dayName = strtolower($date->format('l')); // "friday"
 
-                    // if (in_array($dayName, $weekendDays)) {
-                    //     $fail('Interviews cannot be scheduled on weekends (' . implode(', ', $weekendDays) . ').');
-                    // }
+                    if (in_array($dayName, $weekendDays)) {
+                        $fail('Interviews cannot be scheduled on weekends (' . implode(', ', $weekendDays) . ').');
+                    }
                 },
             ],
 

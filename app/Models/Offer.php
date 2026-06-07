@@ -33,7 +33,7 @@ class Offer extends Model
         return $this->belongsTo(JobPosting::class, 'job_posting_id');
     }
 
-    /*   public function estimatedMonthlySalary(): float
+    public function estimatedMonthlySalary(): float
     {
         $weekendCount  = count($this->weekend_days ?? []);
         $workingDays   = 30 - ($weekendCount * 4); // تقريبي
@@ -42,6 +42,9 @@ class Offer extends Model
     public function isAccepted(): bool
     {
         return $this->status === 'accepted';
-    } */
-
+    }
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
 }
