@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Interview;
+use App\Models\JobPosting;
 use App\Models\User;
 
 class InterviewPolicy
@@ -12,6 +13,8 @@ class InterviewPolicy
         return $user->hasRole('HR');
 
     }
+
+
 
     public function view(User $user, Interview $interview): bool
     {

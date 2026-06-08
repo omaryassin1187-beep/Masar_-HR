@@ -17,7 +17,6 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory,HasRoles,Notifiable;
 
     /**
@@ -66,7 +65,7 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class, 'dep_id');
     }
 
-    
+
     public function documents(): MorphMany
     {
         return $this->morphMany(Document::class, 'owner');
@@ -89,7 +88,7 @@ class User extends Authenticatable
 
     public function attendance()
     {
-        return $this->hasMany(Attendance::class);   
+        return $this->hasMany(Attendance::class);
     }
-     
+
 }

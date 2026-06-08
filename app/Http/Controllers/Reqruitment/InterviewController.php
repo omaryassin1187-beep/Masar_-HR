@@ -21,9 +21,9 @@ class InterviewController extends Controller
 
     use AuthorizesRequests;
 
-    public function eligibleCandidates(JobPosting $jobPosting): AnonymousResourceCollection
+    public function eligibleCandidates( JobPosting $jobPosting): AnonymousResourceCollection
     {
-        $this->authorize('create', Interview::class);
+        $this->authorize('viewEligibleCandidates', $jobPosting);
 
         $candidates = $jobPosting->candidates()
             ->where('status', 'interviewed')

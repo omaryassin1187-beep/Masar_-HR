@@ -36,25 +36,25 @@ class JobRequisitionController extends Controller
         $requisitions = JobRequisition::query()
             ->when(
                 $user->hasRole('manager'),
-                fn ($q) => $q->where('requested_by', $user->id)
+                fn($q) => $q->where('requested_by', $user->id)
             )
 
             ->when(
                 $request->filled('status'),
-                fn ($q) => $q->where('status', $request->status)
+                fn($q) => $q->where('status', $request->status)
             )
 
             ->when(
                 $request->filled('department_id') && $user->hasAnyRole(['admin', 'hr']),
-                fn ($q) => $q->where('department_id', $request->department_id)
+                fn($q) => $q->where('department_id', $request->department_id)
             )
 
             ->when(
                 $request->filled('search'),
-                fn ($q) => $q->where(
+                fn($q) => $q->where(
                     'job_title',
                     'LIKE',
-                    '%'.$request->search.'%'
+                    '%' . $request->search . '%'
                 )
             )
             ->with(['skills', 'department', 'requestedBy'])
@@ -93,7 +93,6 @@ class JobRequisitionController extends Controller
                 'data' => new JobRequisitionlistResource($requisition->load('skills', 'requestedBy', 'department')),
             ], 201);
         });
-
     }
 
     public function update(UpdateJobRequisitionRequest $request, JobRequisition $jobRequisition): JsonResponse
@@ -119,7 +118,6 @@ class JobRequisitionController extends Controller
                 'message' => 'Job requisition updated successfully.',
                 'data' => new JobRequisitionDetailResource($jobRequisition),
             ], 200);
-
         } catch (Exception $e) {
 
             return response()->json([
@@ -168,10 +166,11 @@ class JobRequisitionController extends Controller
     ): JsonResponse {
         $this->authorize('approve', $jobRequisition);
 
+
         $result = $this->requisitionService->approve(
             jobRequisition: $jobRequisition,
-            jobTitle: $request->job_title,
-            description: $request->description,
+            jobTitle: $request->job_title ?? $jobRequisition->job_title,
+            description: $request->description ?? $jobRequisition->description,
         );
 
         return response()->json([

@@ -19,13 +19,20 @@ class JobPostingPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Interview $interview): bool
+    public function view(User $user, JobPosting $jobPosting): bool
     {
         return $user->hasRole('HR')
-                || ($user->hasRole('manager') && $user->id === $interview->interviewed_by);
-
+            || ($user->hasRole('manager') && $user->id === $jobPosting->requisition->requested_by);
     }
 
+    public function viewEligibleCandidates(User $user, JobPosting $jobPosting): bool
+{
+    return $user->hasRole('HR')
+        || (
+            $user->hasRole('manager')
+            && $user->id === $jobPosting->requisition->requested_by
+        );
+}
     /**
      * Determine whether the user can create models.
      */

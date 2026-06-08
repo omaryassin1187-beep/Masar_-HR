@@ -22,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
-        ]);
+        ]);})
 
     ->withMiddleware(function (Middleware $middleware): void {
          $middleware->alias([
@@ -32,7 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-   
+
 
         $exceptions->render(function (NotFoundHttpException $e, $request) {
 

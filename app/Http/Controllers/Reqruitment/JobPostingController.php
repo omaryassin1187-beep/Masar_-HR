@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateJobPostingRequest;
 use App\Http\Resources\JobPostingDetailResource;
 use App\Http\Resources\JobPostingListResource;
 use App\Http\Resources\JobPostingResource;
+use App\Http\Resources\JobRequisitionDetailResource;
 use App\Models\JobPosting;
 use App\Models\JobRequisition;
 use App\Services\JobPostingService;
@@ -60,10 +61,13 @@ class JobPostingController extends Controller
             'description' => $jobRequisition->description,
         ]);
 
-        $jobPosting->setRelation('requisition', $jobRequisition->load(['department', 'skills', 'requestedBy']));
+        $jobPosting->setRelation('requisition', $jobRequisition);
+
+
+        $jobRequisition->load(['department', 'skills', 'requestedBy']);
 
         return response()->json([
-            'data' => new JobPostingResource($jobPosting),
+            'data' => new JobRequisitionDetailResource($jobRequisition),
         ], 200);
     }
 
@@ -87,6 +91,7 @@ class JobPostingController extends Controller
             'requisition.department',
             'requisition.skills',
         ]);
+
 
         return response()->json([
             'data' => new JobPostingDetailResource($jobPosting),
