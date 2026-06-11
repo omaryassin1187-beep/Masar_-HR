@@ -30,9 +30,9 @@ class CreateDailyAttendanceRecords extends Command
     {
         $today = now()->toDateString();
 
-        // if (! $attendanceService->isWorkingDay($today)) {
-        //     return;
-        // }
+        if (! $attendanceService->isWorkingDay($today)) {
+            return;
+        }
 
         User::where('status', 'active')
             ->select('id')
