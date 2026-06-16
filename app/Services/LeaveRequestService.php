@@ -133,7 +133,7 @@ Class LeaveRequestService
         $user=Auth::user();
         $manager = User::role('manager')
                 ->where('dep_id', $user->dep_id)
-                ->get();
+                ->first(); 
 
         Notification::send( $manager, new DeletedLeaveRequestNotification($leaveRequest));
     }

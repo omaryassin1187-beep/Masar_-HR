@@ -6,8 +6,9 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-
-class LeaveRequestRejectedNotification extends Notification
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Notifications\Messages\BroadcastMessage;
+class LeaveRequestRejectedNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -28,7 +29,7 @@ class LeaveRequestRejectedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'broadcast'];
     }
 
     
@@ -46,5 +47,15 @@ class LeaveRequestRejectedNotification extends Notification
             'days_count'    =>$this->LeaveRequest->days_count,
             'message'       => 'Your Leave Request has been rejected'
         ];
+    }
+
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'type'       => $this->LeaveRequest->type,
+            'start_date' => $this->LeaveRequest->start_date,
+            'days_count' => $this->LeaveRequest->days_count,
+            'message'    => 'Your Leave Request has been rejected'
+        ]);
     }
 }
