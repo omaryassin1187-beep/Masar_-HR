@@ -31,6 +31,7 @@ class LeaveRequestResource extends JsonResource
              'type'          =>$this->type,
              'start_date'    =>$this->start_date,
              'days_count'    =>$this->days_count,
+             'reason'        =>$this->reason,
              'status'        =>$this->status,
              'end_date'      => $dates['end_date'],
             'return_date'    => $dates['return_date'],

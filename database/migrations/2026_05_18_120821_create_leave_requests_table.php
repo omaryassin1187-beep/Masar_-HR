@@ -14,10 +14,11 @@ return new class extends Migration
         Schema::create('leave_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->enum('type',['annual','sick','unpaid']);
+            $table->enum('type', ['annual', 'sick', 'unpaid']);
             $table->date('start_date');
             $table->unsignedTinyInteger('days_count');
-            $table->enum('status',['pending','approved','rejected']);
+            $table->string('reason');
+            $table->enum('status', ['pending', 'approved', 'rejected']);
             $table->timestamps();
         });
     }

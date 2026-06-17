@@ -41,6 +41,7 @@ class LeaveRequestSubmittedNotification extends Notification
             'type'          =>$this->LeaveRequest->type,
             'start_date'    =>$this->LeaveRequest->start_date,
             'days_count'    =>$this->LeaveRequest->days_count,
+            'reason'        =>$this->LeaveRequest->reason,
             'message'       => 'New Leave Request submitted'
         ];
     }

@@ -82,4 +82,9 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('attendance-today', [AttendanceController::class, 'getTodayAttendances']);
                 Route::get('attendance-filter', [AttendanceController::class, 'getFilteredAttendances']);
         });
+
+        //---------------Admin & HR routes-------------
+        Route::middleware(['role:HR|admin'])->group(function () {
+                Route::get('search-employees', [userController::class, 'searchEmployees']);
+        });
 });
