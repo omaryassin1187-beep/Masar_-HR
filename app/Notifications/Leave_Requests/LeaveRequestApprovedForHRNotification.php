@@ -48,6 +48,7 @@ class LeaveRequestApprovedForHRNotification extends Notification implements Shou
             'type'          => $this->LeaveRequest->type,
             'start_date'    => $this->LeaveRequest->start_date,
             'days_count'    => $this->LeaveRequest->days_count,
+            'reason'        => $this->LeaveRequest->reason,
             'message'       => 'A Leave Request has been approved'
         ];
     }
@@ -60,6 +61,7 @@ class LeaveRequestApprovedForHRNotification extends Notification implements Shou
             'type'          => $this->LeaveRequest->type,
             'start_date'    => $this->LeaveRequest->start_date,
             'days_count'    => $this->LeaveRequest->days_count,
+            'reason'        => $this->LeaveRequest->reason,
             'message'       => 'A Leave Request has been approved'
         ]);
     }

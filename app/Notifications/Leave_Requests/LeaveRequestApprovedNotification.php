@@ -8,6 +8,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Notifications\Messages\BroadcastMessage;
+
 class LeaveRequestApprovedNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
@@ -15,11 +16,11 @@ class LeaveRequestApprovedNotification extends Notification implements ShouldBro
     /**
      * Create a new notification instance.
      */
-     protected $LeaveRequest;
+    protected $LeaveRequest;
 
     public function __construct($LeaveRequest)
     {
-       $this->LeaveRequest=$LeaveRequest;
+        $this->LeaveRequest = $LeaveRequest;
     }
 
     /**
@@ -32,7 +33,7 @@ class LeaveRequestApprovedNotification extends Notification implements ShouldBro
         return ['database', 'broadcast'];
     }
 
-    
+
 
     /**
      * Get the array representation of the notification.
@@ -42,9 +43,10 @@ class LeaveRequestApprovedNotification extends Notification implements ShouldBro
     public function toDatabase(object $notifiable): array
     {
         return [
-            'type'          =>$this->LeaveRequest->type,
-            'start_date'    =>$this->LeaveRequest->start_date,
-            'days_count'    =>$this->LeaveRequest->days_count,
+            'type'          => $this->LeaveRequest->type,
+            'start_date'    => $this->LeaveRequest->start_date,
+            'days_count'    => $this->LeaveRequest->days_count,
+            'reason'        => $this->LeaveRequest->reason,
             'message'       => 'Your Leave Request has been approved'
         ];
     }
@@ -55,6 +57,7 @@ class LeaveRequestApprovedNotification extends Notification implements ShouldBro
             'type'       => $this->LeaveRequest->type,
             'start_date' => $this->LeaveRequest->start_date,
             'days_count' => $this->LeaveRequest->days_count,
+            'reason'     => $this->LeaveRequest->reason,
             'message'    => 'Your Leave Request has been approved'
         ]);
     }

@@ -19,6 +19,7 @@ class UpdatedLeaveRequestNotification extends Notification implements ShouldBroa
             'type'       => $leaveRequest->type,
             'start_date' => $leaveRequest->start_date,
             'days_count' => $leaveRequest->days_count,
+            'reason'     => $leaveRequest->reason,
         ];
     }
 

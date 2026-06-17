@@ -18,7 +18,7 @@ class LeaveRequestSubmittedNotification extends Notification implements ShouldBr
 
     public function __construct($LeaveRequest)
     {
-       $this->LeaveRequest = $LeaveRequest;
+        $this->LeaveRequest = $LeaveRequest;
     }
 
     public function via(object $notifiable): array
@@ -33,6 +33,7 @@ class LeaveRequestSubmittedNotification extends Notification implements ShouldBr
             'type'       => $this->LeaveRequest->type,
             'start_date' => $this->LeaveRequest->start_date,
             'days_count' => $this->LeaveRequest->days_count,
+            'reason'     => $this->LeaveRequest->reason,
             'message'    => 'New Leave Request submitted'
         ];
     }
@@ -44,6 +45,7 @@ class LeaveRequestSubmittedNotification extends Notification implements ShouldBr
             'type'       => $this->LeaveRequest->type,
             'start_date' => $this->LeaveRequest->start_date,
             'days_count' => $this->LeaveRequest->days_count,
+            'reason'     => $this->LeaveRequest->reason,
             'message'    => 'New Leave Request submitted'
         ]);
     }

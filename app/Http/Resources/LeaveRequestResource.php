@@ -26,13 +26,14 @@ class LeaveRequestResource extends JsonResource
 
 
         return [
-             'id'            =>$this->id,
-             'name'          =>$this->user?->full_name,
-             'type'          =>$this->type,
-             'start_date'    =>$this->start_date,
-             'days_count'    =>$this->days_count,
-             'status'        =>$this->status,
-             'end_date'      => $dates['end_date'],
+            'id'            => $this->id,
+            'name'          => $this->user?->full_name,
+            'type'          => $this->type,
+            'start_date'    => $this->start_date,
+            'days_count'    => $this->days_count,
+            'reason'        => $this->reason,
+            'status'        => $this->status,
+            'end_date'      => $dates['end_date'],
             'return_date'    => $dates['return_date'],
         ];
     }
