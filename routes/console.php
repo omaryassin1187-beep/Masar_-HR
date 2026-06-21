@@ -10,8 +10,8 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command(CreateDailyAttendanceRecords::class)->everyMinute();//dailyAt('10:05');
-Schedule::command(DetermineAttendanceStatus::class)->everyMinute();
+Schedule::command(CreateDailyAttendanceRecords::class)->dailyAt('08:00');//;
+Schedule::command(DetermineAttendanceStatus::class)->everyTenMinutes();//everyMinute();
 Schedule::command('offers:expire')->daily();
 Schedule::command('contracts:notify-expiring')->daily();
 Schedule::command('contracts:update-statuses')->daily();

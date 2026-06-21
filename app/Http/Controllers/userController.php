@@ -199,4 +199,38 @@ public function putUserPassword(Request $request)
         'message' => 'Password changed successfully.',
     ]);
 }
+    public function searchEmployees(Request $request)
+    {
+        $search = trim($request->search);
+
+
+        $employees = User::role('employee')
+            ->where('full_name', 'like', "%{$search}%")
+            ->get();
+
+        // إذا لم يجد نتائج مطابقة
+        if ($employees->isEmpty()) {
+
+            $employees = User::role('employee')
+                ->get()
+                ->map(function ($employee) use ($search) {
+
+                    similar_text(
+                        strtolower($search),
+                        strtolower($employee->full_name),
+                        $percent
+                    );
+
+                    $employee->similarity = $percent;
+
+                    return $employee;
+                })
+                ->sortByDesc('similarity')
+                ->take(5)
+                ->values();
+        }
+
+        return response()->json($employees);
+    }
+        
 }

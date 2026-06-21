@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Attendance_Leaves;
 
 use App\Events\LeaveRequestApproved;
 use App\Events\LeaveRequestSubmitted;
+use App\Events\LeaveRequestDeleted;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveRequestRequest;
@@ -107,23 +108,29 @@ class LeaveRequestController extends Controller
 
     
     public function destroy(string $id)
-    {
-        $leaveRequest = LeaveRequest::findOrFail($id);
+{
+    $leaveRequest = LeaveRequest::findOrFail($id);
+    $this->leaveRequestService->checkUserAuthrization($leaveRequest);
 
-        $this->leaveRequestService->checkUserAuthrization($leaveRequest);
-
-        if ($leaveRequest->status !== 'pending') {
-            return response()->json([
-                'message' => 'Cannot delete this request'
-            ], 403);
-        }
-
-        $leaveRequest->delete();
-        $this->leaveRequestService->notifyManagerAboutDelete($leaveRequest); 
+    if ($leaveRequest->status !== 'pending') {
         return response()->json([
-            'message' => 'Deleted successfully'
-        ]);
+            'message' => 'Cannot delete this request'
+        ], 403);
     }
+
+    // 1. تحميل علاقة المستخدم مسبقاً للتأكد من وجودها بالذاكرة
+    $leaveRequest->load('user');
+
+    // 2. إطلاق الحدث والإشعار أولاً
+    LeaveRequestDeleted::dispatch(Auth::user(), $leaveRequest);
+
+    // 3. الحذف يتم في النهاية تماماً
+    $leaveRequest->delete();
+
+    return response()->json([
+        'message' => 'Deleted successfully'
+    ]);
+}
 
 
     public function approveLeaveRequest(string $id)

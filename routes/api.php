@@ -39,20 +39,27 @@ Route::get('/offers/{offer}/respond', [OfferController::class, 'respond'])
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('logout', [userController::class, 'logout']);
     Route::post('/change-password', [userController::class, 'changePassword']);
+  
     Route::get('/onboarding/status',  [OnboardingController::class, 'status']);
     Route::post('/onboarding/upload', [OnboardingController::class, 'upload']);
+  
     Route::get('/my-documents/{document}/download', [ContractController::class, 'downloadDocument']);
+  
     Route::resource('leaveRequests', LeaveRequestController::class);
     Route::get('my-leave-request', [LeaveRequestController::class, 'getMyLeaveRequests']);
+  
     Route::resource('hourly-leave-Requests', HourlyLeaveRequestController::class);
     Route::get('my-hourly-leave-request', [HourlyLeaveRequestController::class, 'getMyHourlyLeaveRequests']);
+  
     Route::apiResource('profiles', ProfileController::class);
+  
     Route::get('/notifications', [userController::class, 'getNotifications']);
     Route::post('/notifications/{id}/read', [userController::class, 'markAsRead']);
 
     Route::put('check-in', [AttendanceController::class, 'checkIn']);
     Route::put('check-out', [AttendanceController::class, 'checkOut']);
-
+    Route::get('my-monthly-attendance', [AttendanceController::class, 'getMyMonthlyAttendances']);
+  
     //---------------manager routes-------------
 
     Route::middleware(['role:manager'])->group(function () {
@@ -63,8 +70,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-interviews', [InterviewController::class, 'myInterviews']);
         Route::get('/job-postings/{jobPosting}/interviews/ranked-by-rate', [InterviewController::class, 'rankedByRate']);
 
-        Route::get('manager-employees', [userController::class, 'getManagerEmployees']);
-        Route::get('search-manager-employees', [userController::class, 'searchManagerEmployees']);
+                Route::get('manager-employees', [userController::class, 'getManagerEmployees']);
+                Route::get('search-manager-employees', [userController::class, 'searchManagerEmployees']);
 
         Route::get('department-leave-request', [LeaveRequestController::class, 'getDepartmentLeaveRequests']);
         Route::put('leave-requests/{id}/approve', [LeaveRequestController::class, 'approveLeaveRequest']);
@@ -74,7 +81,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('hourly-leave-requests/{id}/approve', [HourlyLeaveRequestController::class, 'approveHourlyLeaveRequest']);
         Route::put('hourly-leave-requests/{id}/reject', [HourlyLeaveRequestController::class, 'rejectHourlyLeaveRequest']);
 
-        Route::get('department-attendance-today', [AttendanceController::class, 'getTodayDepartmentAttendances']);
     });
 
     //---------------HR routes-------------
@@ -88,8 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 
-        Route::get('attendance-analysis', [AttendanceController::class, 'getTodayAttendanceSummary']);
-        Route::get('attendance-today', [AttendanceController::class, 'getTodayAttendances']);
+       
 
         Route::get('all-leave-request', [LeaveRequestController::class, 'getAllLeaveRequests']);
         Route::get('all-hourly-leave-request', [HourlyLeaveRequestController::class, 'getAllHourlyLeaveRequests']);
@@ -157,6 +162,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/employees/{user}/contract',       [ContractController::class, 'showForEmployee']);
         Route::get('/employees/{user}/contract/download', [ContractController::class, 'downloadForEmployee']);
         Route::get('/employees/{user}/documents', [ContractController::class, 'documentsForEmployee']);
+      
+        Route::get('attendance-today-analysis', [AttendanceController::class, 'getTodayAttendanceSummary']);
+        Route::get('attendance-today', [AttendanceController::class, 'getTodayAttendances']);
+        Route::get('attendance-filter', [AttendanceController::class, 'getFilteredAttendances']);
     });
 });
 
