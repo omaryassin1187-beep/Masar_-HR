@@ -4,11 +4,13 @@ namespace App\Notifications;
 
 use App\Models\Offer;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class AutoOfferSentNotification extends Notification
+class AutoOfferSentNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -28,7 +30,7 @@ class AutoOfferSentNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database' ,'broadcast'];
     }
 
     /**
@@ -62,5 +64,15 @@ class AutoOfferSentNotification extends Notification
             'job_title'      => $this->offer->jobPosting->requisition->job_title,
             'action_url'     => "/offers/{$this->offer->id}",
         ];
+    }
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'type'           => 'auto_offer_sent',
+            'offer_id'       => $this->offer->id,
+            'candidate_name' => $this->offer->candidate->full_name,
+            'job_title'      => $this->offer->jobPosting->requisition->job_title,
+            'action_url'     => "/offers/{$this->offer->id}",
+        ]);
     }
     }

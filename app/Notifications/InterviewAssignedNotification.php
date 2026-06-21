@@ -4,10 +4,12 @@ namespace App\Notifications;
 
 use App\Models\Interview;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class InterviewAssignedNotification extends Notification
+class InterviewAssignedNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -26,7 +28,7 @@ class InterviewAssignedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database', 'mail', 'broadcast'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -42,7 +44,7 @@ class InterviewAssignedNotification extends Notification
             ->line('A new interview has been scheduled for you:')
             ->line("**Candidate:** {$candidate->full_name}")
             ->line("**Position:** {$posting->requisition->job_title}")
-            ->line('**Date:** '.$interview->scheduled_at->format('Y-m-d H:i'))
+            ->line('**Date:** ' . $interview->scheduled_at->format('Y-m-d H:i'))
             ->line("**Location:** {$interview->location_details}")
             ->action('View Details', url("/interviews/{$interview->id}"))
             ->salutation('Best regards — MasarHR Team');
@@ -56,5 +58,14 @@ class InterviewAssignedNotification extends Notification
             'candidate' => $this->interview->candidate->full_name,
             'scheduled_at' => $this->interview->scheduled_at->toISOString(),
         ];
+    }
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'type' => 'interview_assigned',
+            'interview_id' => $this->interview->id,
+            'candidate' => $this->interview->candidate->full_name,
+            'scheduled_at' => $this->interview->scheduled_at->toISOString(),
+        ]);
     }
 }

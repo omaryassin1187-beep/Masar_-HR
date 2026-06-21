@@ -4,10 +4,12 @@ namespace App\Notifications;
 
 use App\Models\ContractRenewal;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ContractRenewalAcceptedNotification extends Notification
+class ContractRenewalAcceptedNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -15,7 +17,7 @@ class ContractRenewalAcceptedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database' , 'broadcast'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -38,5 +40,13 @@ class ContractRenewalAcceptedNotification extends Notification
             'renewal_id'  => $this->renewal->id,
             'user_name'   => $this->renewal->user->full_name,
         ];
+    }
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'type'        => 'renewal_accepted',
+            'renewal_id'  => $this->renewal->id,
+            'user_name'   => $this->renewal->user->full_name,
+        ]);
     }
 }

@@ -16,7 +16,7 @@ class AdminSeeder extends Seeder
             'full_name' => 'ceo',
             'email' => 'omar12@gmail.com',
             'dep_id' => 1,
-            'password' => '00000000',
+            'password' => '11111111',
         ]);
         $admin->assignRole('admin');
         $admin->leaveBalance()->createMany([

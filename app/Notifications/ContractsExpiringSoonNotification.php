@@ -3,12 +3,14 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ContractsExpiringSoonNotification extends Notification
+class ContractsExpiringSoonNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -27,7 +29,7 @@ class ContractsExpiringSoonNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'broadcast'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -47,5 +49,13 @@ class ContractsExpiringSoonNotification extends Notification
             'count'        => $this->contracts->count(),
             'contract_ids' => $this->contracts->pluck('id')->toArray(),
         ];
+    }
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'type'         => 'contracts_expiring_soon',
+            'count'        => $this->contracts->count(),
+            'contract_ids' => $this->contracts->pluck('id')->toArray(),
+        ]);
     }
 }

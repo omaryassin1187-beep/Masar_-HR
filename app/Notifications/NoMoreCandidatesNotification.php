@@ -5,11 +5,12 @@ namespace App\Notifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Models\JobPosting;
-
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NoMoreCandidatesNotification extends Notification
+class NoMoreCandidatesNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -29,7 +30,7 @@ class NoMoreCandidatesNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'broadcast'];
     }
 
     /**
@@ -60,5 +61,15 @@ class NoMoreCandidatesNotification extends Notification
             'action_url'     => "/job-postings/{$this->jobPosting->id}",
 
         ];
+    }
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'type'           => 'no_more_candidates',
+            'job_posting_id' => $this->jobPosting->id,
+            'job_title'      => $this->jobPosting->requisition->job_title,
+            'message'        => 'All offers declined. No more ranked candidates.',
+            'action_url'     => "/job-postings/{$this->jobPosting->id}",
+        ]);
     }
 }

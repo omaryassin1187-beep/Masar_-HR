@@ -16,7 +16,7 @@ class ManagerSeeder extends Seeder
             'full_name' => 'ahmadMarketing',
             'email' => 'omar13@gmail.com',
             'dep_id' => 3,
-            'password' => '22222222',
+            'password' => '11111111',
         ]);
         $marketingManager->assignRole('manager');
          $marketingManager->leaveBalance()->createMany([
@@ -46,7 +46,7 @@ class ManagerSeeder extends Seeder
             'full_name' => 'ahmadBack',
             'email' => 'omar14@gmail.com',
             'dep_id' => 4,
-            'password' => '33333333',
+            'password' => '11111111',
         ]);
         $backendManager->assignRole('manager');
         $backendManager->leaveBalance()->createMany([
@@ -76,7 +76,7 @@ class ManagerSeeder extends Seeder
             'full_name' => 'ahmadFront',
             'email' => 'omar15@gmail.com',
             'dep_id' => 5,
-            'password' => '44444444',
+            'password' => '11111111',
         ]);
         $frontendManager->assignRole('manager');
         $frontendManager->leaveBalance()->createMany([

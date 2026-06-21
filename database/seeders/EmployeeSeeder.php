@@ -16,7 +16,7 @@ class EmployeeSeeder extends Seeder
         'full_name'=>'employeeMarketing',
         'email'=>'employee3@gmail.com',
         'dep_id'=>3,
-        'password'=>'55555555'
+        'password'=>'11111111'
         ]);
         $employeeMarketing->assignRole('employee');
         $employeeMarketing->leaveBalance()->createMany([
@@ -46,7 +46,7 @@ class EmployeeSeeder extends Seeder
         'full_name'=>'employeeBack',
         'email'=>'employee4@gmail.com',
         'dep_id'=>4,
-        'password'=>'66666666'
+        'password'=>'11111111'
         ]);
         $employeeBack->assignRole('employee');
         $employeeBack->leaveBalance()->createMany([
@@ -76,7 +76,7 @@ class EmployeeSeeder extends Seeder
         'full_name'=>'employeeFront',
         'email'=>'employee5@gmail.com',
         'dep_id'=>5,
-        'password'=>'77777777'
+        'password'=>'11111111'
         ]);
         $employeeFront->assignRole('employee');
          $employeeFront->leaveBalance()->createMany([
