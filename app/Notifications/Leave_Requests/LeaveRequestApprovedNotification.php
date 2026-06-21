@@ -14,11 +14,11 @@ class LeaveRequestApprovedNotification extends Notification
     /**
      * Create a new notification instance.
      */
-     protected $LeaveRequest;
+    protected $LeaveRequest;
 
     public function __construct($LeaveRequest)
     {
-       $this->LeaveRequest=$LeaveRequest;
+        $this->LeaveRequest = $LeaveRequest;
     }
 
     /**
@@ -31,7 +31,7 @@ class LeaveRequestApprovedNotification extends Notification
         return ['database'];
     }
 
-    
+
 
     /**
      * Get the array representation of the notification.
@@ -41,9 +41,10 @@ class LeaveRequestApprovedNotification extends Notification
     public function toDatabase(object $notifiable): array
     {
         return [
-            'type'          =>$this->LeaveRequest->type,
-            'start_date'    =>$this->LeaveRequest->start_date,
-            'days_count'    =>$this->LeaveRequest->days_count,
+            'type'          => $this->LeaveRequest->type,
+            'start_date'    => $this->LeaveRequest->start_date,
+            'days_count'    => $this->LeaveRequest->days_count,
+            'reason'        => $this->LeaveRequest->reason,
             'message'       => 'Your Leave Request has been approved'
         ];
     }

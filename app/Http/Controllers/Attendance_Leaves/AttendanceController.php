@@ -9,7 +9,7 @@ use App\Http\Controllers\Controller;
 
 class AttendanceController extends Controller
 {
-    
+
 
     public function checkIn()
     {
@@ -28,8 +28,8 @@ class AttendanceController extends Controller
         ]);
 
         return response()->json([
-               'message' => 'Check-in completed successfully.'
-            ], 200);
+            'message' => 'Check-in completed successfully.'
+        ], 200);
     }
 
     public function checkOut()
@@ -59,11 +59,12 @@ class AttendanceController extends Controller
         ], 200);
     }
 
-        public function getTodayAttendanceSummary(): array
+    public function getTodayAttendanceSummary(): array
     {
         $attendances = Attendance::query()
             ->with('user')
             ->whereDate('date', today())
+            ->visibleTo(auth()->user())
             ->get();
 
         return [
@@ -76,29 +77,59 @@ class AttendanceController extends Controller
         ];
     }
 
-        public function getTodayAttendances()
+    public function getTodayAttendances()
     {
         return Attendance::query()
             ->with('user')
             ->whereDate('date', today())
+            ->visibleTo(auth()->user())
             ->orderBy('check_in')
             ->get();
     }
 
-    public function getTodayDepartmentAttendances()
+    public function getMyMonthlyAttendances()
     {
-        $manager = auth()->user();
-
         return Attendance::query()
             ->with('user')
-            ->whereDate('date', today())
-            ->whereHas('user', function ($query) use ($manager) {
-
-                $query->where('dep_id', $manager->dep_id)
-                    ->role('employee');
-
-            })
+            ->where('user_id', auth()->id())
+            ->whereMonth('date', now()->month)
+            ->whereYear('date', now()->year)
+            ->orderBy('date')
             ->orderBy('check_in')
             ->get();
+    }
+
+    public function getFilteredAttendances(Request $request)
+    {
+        $validated = $request->validate([
+            'from' => 'required|date',
+            'to' => 'nullable|date|after_or_equal:from',
+            'status' => 'nullable|in:present,late,leave,absent',
+            'dep_id' => 'nullable|exists:departments,id',
+        ]);
+
+        $attendances = Attendance::query()
+            ->with('user')
+            ->visibleTo(auth()->user())
+            ->whereDate('date', '>=', $validated['from']);
+
+
+        if (isset($validated['to'])) {
+            $attendances->whereDate('date', '<=', $validated['to']);
+        }
+
+        if (isset($validated['status'])) {
+            $attendances->where('status', $validated['status']);
+        }
+
+        if (isset($validated['dep_id'])) {
+            $attendances->whereHas('user', function ($query) use ($validated) {
+                $query->where('dep_id', $validated['dep_id']);
+            });
+        }
+
+        return response()->json([
+            'data' => $attendances->get()
+        ], 200);
     }
 }
