@@ -8,6 +8,7 @@ use App\Models\Attendance_Leaves\Attendance;
 use App\Models\Attendance_Leaves\LeaveBalance;
 use App\Models\Attendance_Leaves\LeaveRequest;
 use App\Models\Attendance_Leaves\HourlyLeaveEquest;
+use App\Models\Salary\Deduction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -89,6 +90,11 @@ class User extends Authenticatable
     public function attendance()
     {
         return $this->hasMany(Attendance::class);
+    }
+
+    public function deduction()
+    {
+        return $this->hasMany(Deduction::class);
     }
 
 }

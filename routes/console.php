@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\CreateAutoDeductions;
 use App\Console\Commands\CreateDailyAttendanceRecords;
 use App\Console\Commands\DetermineAttendanceStatus;
 use Illuminate\Foundation\Inspiring;
@@ -11,4 +12,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command(CreateDailyAttendanceRecords::class)->everyMinute();//dailyAt('10:05');
-Schedule::command(DetermineAttendanceStatus::class)->everyMinute();
+//Schedule::command(DetermineAttendanceStatus::class)->everyMinute();
+//Schedule::command(CreateAutoDeductions::class)->everyMinute();//dailyAt('17:05');
