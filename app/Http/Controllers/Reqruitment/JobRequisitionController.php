@@ -10,6 +10,7 @@ use App\Http\Requests\UpdateJobRequisitionRequest;
 use App\Http\Resources\JobPostingResource;
 use App\Http\Resources\JobRequisitionDetailResource;
 use App\Http\Resources\JobRequisitionlistResource;
+use App\Http\Resources\Recruitment\StoreJobRequisitionResource;
 use App\Models\JobRequisition;
 use App\Services\JobRequisitionService;
 use Exception;
@@ -92,7 +93,7 @@ class JobRequisitionController extends Controller
 
             return response()->json([
                 'message' => 'Job requisition submitted successfully',
-                'data' => new JobRequisitionlistResource($requisition->load('skills', 'requestedBy', 'department')),
+                'data' => new StoreJobRequisitionResource($requisition->load('skills', 'requestedBy', 'department')),
             ], 201);
         });
     }
