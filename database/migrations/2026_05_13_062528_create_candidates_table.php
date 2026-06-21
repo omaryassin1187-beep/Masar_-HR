@@ -15,19 +15,21 @@ return new class extends Migration
             $table->id();
             $table->foreignId('job_posting_id')->constrained('job_postings')->cascadeOnDelete();
             $table->string('full_name', 150);
-            $table->string('email')->unique();
+            $table->string('email')->dropunique();
+            $table->unique(['email', 'job_posting_id']);
             $table->integer('experience')->nullable();
             $table->string('cv_path')->nullable();
             $table->text('cover_letter')->nullable();
+            $table->text('more_skill')->nullable();
             $table->enum('status', [
-            'applied',
-            'screening',
-            'qualified',
-            'interview',
-            'offered',
-            'hired',
-            'rejected'
-        ])->default('applied');
+                'applied',
+                'screened',
+                'qualified',
+                'interviewed',
+                'offered',
+                'hired',
+                'rejected',
+            ])->default('applied');
             $table->timestamps();
         });
     }

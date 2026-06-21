@@ -19,9 +19,9 @@ use App\Notifications\Leave_Requests\HourlyLeaveRequestRejectedNotification;
 
 class HourlyLeaveRequestController extends Controller
 {
-     public function __construct(
-                protected AttendanceService $attendanceService,
-                protected LeaveRequestService $leaveRequestService
+    public function __construct(
+        protected AttendanceService $attendanceService,
+        protected LeaveRequestService $leaveRequestService
     ) {}
 
     public function index()
@@ -39,25 +39,23 @@ class HourlyLeaveRequestController extends Controller
      */
     public function store(StoreHourlyLeaveRequest $request)
     {
-       $validatedData=$request->validated();
-       $validatedData['user_id']=Auth::user()->id;
-       $validatedData['status']=  auth()->user()->hasRole('employee') ? 'pending': 'approved';
+        $validatedData = $request->validated();
+        $validatedData['user_id'] = Auth::user()->id;
+        $validatedData['status'] =  auth()->user()->hasRole('employee') ? 'pending' : 'approved';
 
-       if(!$this->attendanceService->isWorkingDay($request->date))
-       {
-        return response()->json([ 'message'=>$request->date.' This date is holiday']);
-       }
+        if (!$this->attendanceService->isWorkingDay($request->date)) {
+            return response()->json(['message' => $request->date . ' This date is holiday']);
+        }
 
-       if ($this->leaveRequestService->hasHourlyLeaveOverlap($validatedData))
-       { 
+        if ($this->leaveRequestService->hasHourlyLeaveOverlap($validatedData)) {
             return response()->json([
                 'message' => 'The requested time overlaps with an existing hourly leave request.'
             ], 422);
-       }
+        }
 
         $hourlyLeaveRequest  = HourlyLeaveEquest::create($validatedData);
 
-        $this->leaveRequestService->notifyManagerAboutStoreHourlyLeaveRequest($hourlyLeaveRequest); 
+        $this->leaveRequestService->notifyManagerAboutStoreHourlyLeaveRequest($hourlyLeaveRequest);
 
         return response()->json([
             'message' => ' Hourly Leave request submitted successfully.',
@@ -70,9 +68,9 @@ class HourlyLeaveRequestController extends Controller
      */
     public function show(string $id)
     {
-        $hourlyLeaveRequest= HourlyLeaveEquest::findOrFail($id);
-        $this->leaveRequestService->checkUserAuthrization($hourlyLeaveRequest);  
-        return response()->json(new HourlyLeaveRequestResource($hourlyLeaveRequest),200);
+        $hourlyLeaveRequest = HourlyLeaveEquest::findOrFail($id);
+        $this->leaveRequestService->checkUserAuthrization($hourlyLeaveRequest);
+        return response()->json(new HourlyLeaveRequestResource($hourlyLeaveRequest), 200);
     }
 
     /**
@@ -80,20 +78,20 @@ class HourlyLeaveRequestController extends Controller
      */
     public function update(UpdateHourlyLeaveRequest $request, string $id)
     {
-        $hourlyLeaveRequest= HourlyLeaveEquest::findOrFail($id);
-           $this->leaveRequestService->checkUserAuthrization($hourlyLeaveRequest); 
-           if ($hourlyLeaveRequest->status !== 'pending') {
+        $hourlyLeaveRequest = HourlyLeaveEquest::findOrFail($id);
+        $this->leaveRequestService->checkUserAuthrization($hourlyLeaveRequest);
+        if ($hourlyLeaveRequest->status !== 'pending') {
             return response()->json([
                 'message' => 'Cannot update Hourly leave request. Only pending requests can be modified.'
             ], 403);
-         }
-           $hourlyLeaveRequest->update($request->validated());
-           $this->leaveRequestService->notifyManagerAboutUpdateHourlyLeaveRequest($hourlyLeaveRequest); 
-           return response()->json([
+        }
+        $hourlyLeaveRequest->update($request->validated());
+        $this->leaveRequestService->notifyManagerAboutUpdateHourlyLeaveRequest($hourlyLeaveRequest);
+        return response()->json([
             'message' => 'Hourly Leave request updated successfully.',
             'data'    =>  new HourlyLeaveRequestResource($hourlyLeaveRequest),
-         ]);
-         // dd($request->all());
+        ]);
+        // dd($request->all());
     }
 
     /**
@@ -108,11 +106,11 @@ class HourlyLeaveRequestController extends Controller
         if ($hourlyLeaveRequest->status !== 'pending') {
             return response()->json([
                 'message' => 'Only pending request can be deleted'
-            ], 403); 
+            ], 403);
         }
 
         $hourlyLeaveRequest->delete();
-        $this->leaveRequestService->notifyManagerAboutDeletedHourlyLeaveRequest($hourlyLeaveRequest); 
+        $this->leaveRequestService->notifyManagerAboutDeletedHourlyLeaveRequest($hourlyLeaveRequest);
         return response()->json([
             'message' => 'Deleted successfully'
         ]);
@@ -126,7 +124,7 @@ class HourlyLeaveRequestController extends Controller
             return response()->json([
                 'message' => ' Only pending requests can be modified.'
             ], 403);
-         }
+        }
         $hourlyLeaveRequest->update([
             'status' => 'approved',
         ]);
@@ -136,7 +134,7 @@ class HourlyLeaveRequestController extends Controller
         return response()->json([
             'message' => 'Leave request approved successfully.',
             'data'    =>  new HourlyLeaveRequestResource($hourlyLeaveRequest),
-         ]);
+        ]);
     }
 
     public function rejectHourlyLeaveRequest(string $id)
@@ -144,45 +142,44 @@ class HourlyLeaveRequestController extends Controller
         $hourlyLeaveRequest = HourlyLeaveEquest::findOrFail($id);
         Gate::authorize('checkManager', $hourlyLeaveRequest->user);
         if ($hourlyLeaveRequest->status !== 'pending') {
-                    return response()->json([
-                        'message' => ' Only pending requests can be modified.'
-                    ], 403);
-                }
+            return response()->json([
+                'message' => ' Only pending requests can be modified.'
+            ], 403);
+        }
         $hourlyLeaveRequest->update([
             'status' => 'rejected',
         ]);
 
-        $LeaveRequestOwner = $hourlyLeaveRequest->user; 
-        Notification::send( $LeaveRequestOwner, new HourlyLeaveRequestRejectedNotification($hourlyLeaveRequest));
+        $LeaveRequestOwner = $hourlyLeaveRequest->user;
+        Notification::send($LeaveRequestOwner, new HourlyLeaveRequestRejectedNotification($hourlyLeaveRequest));
 
         return response()->json([
             'message' => 'Leave request rjected successfully.',
             'data'    =>  new HourlyLeaveRequestResource($hourlyLeaveRequest),
-         ]);
+        ]);
     }
 
     public function getDepartmentHourlyLeaveRequests(Request $request)
-{
-    $validated = $request->validate([
-        'status' => 'required|in:pending,approved,rejected'
-    ]);
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,approved,rejected'
+        ]);
 
-    $manager = auth()->user();
+        $manager = auth()->user();
 
-    $hourlyLeaveRequests = HourlyLeaveEquest::with('user')
-        ->where('status', $validated['status'])
-        ->whereHas('user', function ($query) use ($manager) {
+        $hourlyLeaveRequests = HourlyLeaveEquest::with('user')
+            ->where('status', $validated['status'])
+            ->whereHas('user', function ($query) use ($manager) {
 
-            $query->where('dep_id', $manager->dep_id)
-                  ->role('employee');
+                $query->where('dep_id', $manager->dep_id)
+                    ->role('employee');
+            })
+            ->get();
 
-        })
-        ->get();
+        return HourlyLeaveRequestResource::collection($hourlyLeaveRequests);
+    }
 
-    return HourlyLeaveRequestResource::collection($hourlyLeaveRequests);
-}
-
-        public function getMyHourlyLeaveRequests(Request $request)
+    public function getMyHourlyLeaveRequests(Request $request)
     {
         $validated = $request->validate([
             'status' => 'required|in:pending,approved,rejected',
@@ -214,7 +211,7 @@ class HourlyLeaveRequestController extends Controller
         return HourlyLeaveRequestResource::collection($hourlyLeaveRequest);
     }
 
-        public function getAllHourlyLeaveRequests(Request $request)
+    public function getAllHourlyLeaveRequests(Request $request)
     {
         $validated = $request->validate([
             'status' => 'nullable|in:pending,approved,rejected',

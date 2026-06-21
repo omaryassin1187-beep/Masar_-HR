@@ -13,14 +13,16 @@ return new class extends Migration
     {
         Schema::create('interviews', function (Blueprint $table) {
             $table->id();
-            $table->foreignid('candidate_id')->constrained()->cascadeOnDelete();
-            $table->foreignid('job_posting_id')->constrained()->cascadeOnDelete();
-            $table->dateTime('date_interview');
+            $table->foreignId('candidate_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('job_posting_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('interviewed_by')->constrained('users'); // المدير المسؤول
+            $table->dateTime('scheduled_at');
             $table->enum('location_type', ['online', 'on_site'])->default('online');
+            $table->string('location_details')->nullable();
             $table->enum('status', ['scheduled', 'done', 'cancelled'])->default('scheduled');
-            $table->string('location_details')->nullable(); //e.g., Zoom link or office address
+            $table->unsignedTinyInteger('rate')->nullable();   // 1-10
             $table->text('notes')->nullable();
-            $table->enum('rate', ['excellent', 'good', 'average', 'poor'])->nullable();
+            $table->unsignedSmallInteger('rank')->nullable();  // ترتيب المدير النهائي
             $table->timestamps();
         });
     }

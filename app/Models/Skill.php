@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Skill extends Model
-
 {
     protected $fillable = ['name'];
 
@@ -14,9 +13,9 @@ class Skill extends Model
     {
         return $this->belongsToMany(JobRequisition::class, 'job_required_skills');
     }
+
     public function candidates(): BelongsToMany
     {
         return $this->belongsToMany(Candidate::class, 'candidate_skills');
     }
-
 }
