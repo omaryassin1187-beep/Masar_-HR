@@ -2,48 +2,43 @@
 
 namespace App\Notifications\Leave_Requests;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
-class DeletedLeaveRequestNotification extends Notification
+class DeletedLeaveRequestNotification extends Notification implements ShouldBroadcastNow
 {
-    use Queueable;
+    protected array $requestData;
 
-    protected $LeaveRequest;
-
-    public function __construct($LeaveRequest)
+    public function __construct($leaveRequest)
     {
-        $this->LeaveRequest = $LeaveRequest;
+        // نأخذ البيانات كـ Array فوراً قبل الحذف
+        $this->requestData = [
+            'employee'   => $leaveRequest->user->full_name ?? 'Unknown',
+            'type'       => $leaveRequest->type,
+            'start_date' => $leaveRequest->start_date,
+            'days_count' => $leaveRequest->days_count,
+            'reason'     => $leaveRequest->reason,
+
+        ];
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'broadcast'];
     }
 
-
-
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
     public function toDatabase(object $notifiable): array
     {
-        return [
-            'employee'      => $this->LeaveRequest->user->full_name,
-            'type'          => $this->LeaveRequest->type,
-            'start_date'    => $this->LeaveRequest->start_date,
-            'days_count'    => $this->LeaveRequest->days_count,
-            'reason'        => $this->LeaveRequest->reason,
-            'message'       => ' Leave Request deleted'
-        ];
+        return array_merge($this->requestData, ['message' => 'Leave Request deleted']);
+    }
+
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        Log::info('toBroadcast called for delete notification');
+        return new BroadcastMessage(
+            array_merge($this->requestData, ['message' => 'Leave Request deleted'])
+        );
     }
 }

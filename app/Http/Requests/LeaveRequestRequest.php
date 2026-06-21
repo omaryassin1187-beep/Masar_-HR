@@ -23,25 +23,26 @@ class LeaveRequestRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type'=>'required|in:annual,sick,unpaid',
-            'start_date'=>'required|date|after_or_equal:today',
-            'days_count'=>'required|integer|min:1|max:30',
+            'type' => 'required|in:annual,sick,unpaid',
+            'start_date' => 'required|date|after_or_equal:today',
+            'days_count' => 'required|integer|min:1|max:30',
             'reason' => 'required|string|min:5|max:500',
+
         ];
     }
 
-        public function messages()
+    public function messages()
     {
         return [
-        
+
             'start_date.required' => 'The start date field is required.',
             'start_date.date' => 'The start date must be a valid date.',
             'start_date.after_or_equal' => 'The date must be today or a future date.',
-            
+
             'type.required' => 'The type field is required.',
             'type.in' => 'The type must be either annual or sick or unpaid.',
 
-        
+
             'days_count.required' => 'Please enter the number of leave days.',
             'days_count.integer' => 'The leave days count must be a valid number.',
             'days_count.min' => 'Leave days must be at least 1 day.',

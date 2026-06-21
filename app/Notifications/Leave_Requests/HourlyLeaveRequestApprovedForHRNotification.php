@@ -6,8 +6,9 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-
-class HourlyLeaveRequestApprovedForHRNotification extends Notification
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Notifications\Messages\BroadcastMessage;
+class HourlyLeaveRequestApprovedForHRNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -27,7 +28,7 @@ class HourlyLeaveRequestApprovedForHRNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'broadcast'];
     }
 
    
@@ -47,5 +48,18 @@ class HourlyLeaveRequestApprovedForHRNotification extends Notification
             'reason'        =>$this->HourlyLeaveRequest->reason,
             'message'       => 'New Hourly Leave Request has been approved'
         ];
+    }
+
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'employee'      =>$this->HourlyLeaveRequest->user->full_name,
+            'department'    =>$this->HourlyLeaveRequest->user->department->name,
+            'date'          =>$this->HourlyLeaveRequest->date,
+            'start_time'    =>$this->HourlyLeaveRequest->start_time,
+            'end_time'      =>$this->HourlyLeaveRequest->end_time,
+            'reason'        =>$this->HourlyLeaveRequest->reason,
+            'message'       => 'New Hourly Leave Request has been approved'
+        ]);
     }
 }
