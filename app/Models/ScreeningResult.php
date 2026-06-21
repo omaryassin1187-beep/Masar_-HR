@@ -13,16 +13,18 @@ class ScreeningResult extends Model
         'matched_skills_count',
         'passed',
     ];
+
     protected $casts = [
         'passed' => 'boolean',
     ];
+
     public function candidate(): BelongsTo
     {
         return $this->belongsTo(Candidate::class, 'candidate_id');
     }
+
     public function jobPosting(): BelongsTo
     {
         return $this->belongsTo(JobPosting::class, 'job_posting_id');
     }
-
 }

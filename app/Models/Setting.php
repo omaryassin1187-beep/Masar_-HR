@@ -23,9 +23,12 @@ class Setting extends Model
         'currency',
         'grace_period',
     ];
+
     protected $casts = [
         'weekend_days' => 'array',
     ];
+
+    // تطبيق فكرة ال singleton
     //تطبيق فكرة ال singleton
     protected static $instance;
 
@@ -56,5 +59,4 @@ class Setting extends Model
             'grace_period'            => 15,
         ];
     }
-
 }

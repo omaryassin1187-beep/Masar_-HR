@@ -12,14 +12,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable,HasRoles,HasApiTokens;
-
+    use HasApiTokens, HasFactory,HasRoles,Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -67,7 +65,7 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class, 'dep_id');
     }
 
-    
+
     public function documents(): MorphMany
     {
         return $this->morphMany(Document::class, 'owner');
@@ -90,7 +88,7 @@ class User extends Authenticatable
 
     public function attendance()
     {
-        return $this->hasMany(Attendance::class);   
+        return $this->hasMany(Attendance::class);
     }
-     
+
 }

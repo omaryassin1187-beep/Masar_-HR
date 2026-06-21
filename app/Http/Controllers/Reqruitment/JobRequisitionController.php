@@ -1,92 +1,196 @@
 <?php
 
 namespace App\Http\Controllers\Reqruitment;
+
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ApproveJobRequisitionRequest;
+use App\Http\Requests\IndexJobRequisitionRequest;
 use App\Http\Requests\StoreJobRequisitionRequest;
-use App\Http\Resources\Recruitment\JobRequisitionResource;
+use App\Http\Requests\UpdateJobRequisitionRequest;
+use App\Http\Resources\JobPostingResource;
+use App\Http\Resources\JobRequisitionDetailResource;
+use App\Http\Resources\JobRequisitionlistResource;
 use App\Models\JobRequisition;
-use App\Models\User;
-use App\Notifications\JobRequisitionSubmittedNotification;
+use App\Services\JobRequisitionService;
+use Exception;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 
 class JobRequisitionController extends Controller
 {
+    use AuthorizesRequests;
+
+    public function __construct(
+        private readonly JobRequisitionService $requisitionService
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(IndexJobRequisitionRequest $request): JsonResponse
     {
-        //
+        $this->authorize('viewAny', JobRequisition::class);
+        $user = $request->user();
+
+        $requisitions = JobRequisition::query()
+            ->when(
+                $user->hasRole('manager'),
+                fn($q) => $q->where('requested_by', $user->id)
+            )
+
+            ->when(
+                $request->filled('status'),
+                fn($q) => $q->where('status', $request->status)
+            )
+
+            ->when(
+                $request->filled('department_id') && $user->hasAnyRole(['admin', 'hr']),
+                fn($q) => $q->where('department_id', $request->department_id)
+            )
+
+            ->when(
+                $request->filled('search'),
+                fn($q) => $q->where(
+                    'job_title',
+                    'LIKE',
+                    '%' . $request->search . '%'
+                )
+            )
+            ->with(['skills', 'department', 'requestedBy'])
+            ->latest()
+            ->paginate($request->integer('per_page', 15));
+
+        return response()->json([
+            'message' => 'Job requisitions retrieved successfully.',
+            'data' => JobRequisitionlistResource::collection($requisitions),
+            'meta' => [
+                'current_page' => $requisitions->currentPage(),
+                'last_page' => $requisitions->lastPage(),
+                'per_page' => $requisitions->perPage(),
+                'total' => $requisitions->total(),
+            ],
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(StoreJobRequisitionRequest $request): JsonResponse
     {
+        $this->authorize('create', JobRequisition::class);
+
         return DB::transaction(function () use ($request) {
             $requisition = JobRequisition::create([
-            'department_id' => $request->user()->dep_id,
-            'requested_by'  => $request->user()->id,
-            'job_title'     => $request->job_title,
-            'description'   => $request->description,
-            'experience'    => $request->experience,
-        ]);
+                'department_id' => $request->user()->dep_id,
+                'requested_by' => $request->user()->id,
+                'job_title' => $request->job_title,
+                'description' => $request->description,
+                'experience' => $request->experience,
+            ]);
 
-        $requisition->skills()->attach($request->skills);
-    $hrUsers = User::role('hr')->get();
-    Notification::send( $hrUsers, new JobRequisitionSubmittedNotification($requisition));
+            $requisition->skills()->attach($request->skills);
 
-
-    return response()->json([
-            'message' => 'Job requisition submitted successfully',
-            'data'    => new JobRequisitionResource($requisition->load('skills', 'requestedBy', 'department')),
-        ], 201);
-    });
-
+            return response()->json([
+                'message' => 'Job requisition submitted successfully',
+                'data' => new JobRequisitionlistResource($requisition->load('skills', 'requestedBy', 'department')),
+            ], 201);
+        });
     }
 
+    public function update(UpdateJobRequisitionRequest $request, JobRequisition $jobRequisition): JsonResponse
+    {
+        $this->authorize('update', $jobRequisition);
 
-    function getAllRequisitions(): JsonResponse
+        try {
+            // Atomicity (إما كل العمليات تنجح أو كلها تتراجع)
+            DB::transaction(function () use ($request, $jobRequisition) {
+
+                $jobRequisition->update(
+                    $request->only(['job_title', 'description', 'experience'])
+                );
+
+                if ($request->has('skills')) {
+                    $jobRequisition->skills()->sync($request->skills);
+                }
+            });
+
+            $jobRequisition->load(['skills', 'department', 'requestedBy']);
+
+            return response()->json([
+                'message' => 'Job requisition updated successfully.',
+                'data' => new JobRequisitionDetailResource($jobRequisition),
+            ], 200);
+        } catch (Exception $e) {
+
+            return response()->json([
+                'message' => 'Failed to update job requisition. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal Server Error',
+            ], 500);
+        }
+    }
+
+    public function destroy(JobRequisition $jobRequisition): JsonResponse
+    {
+        $this->authorize('delete', $jobRequisition);
+
+        $jobRequisition->skills()->sync([]);
+        $jobRequisition->delete();
+
+        return response()->json([
+            'message' => 'Job requisition deleted successfully.',
+        ]);
+    }
+
+    public function getAllRequisitions(): JsonResponse
     {
         $requisitions = JobRequisition::with('skills', 'requestedBy', 'department')->get();
+
         return response()->json([
             'message' => 'Job requisitions retrieved successfully',
-            'data'    => JobRequisitionResource::collection($requisitions),
+            'data' => JobRequisitionlistResource::collection($requisitions),
         ], 200);
     }
 
-
-   
-
-
-
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show(JobRequisition $jobRequisition): JsonResponse
     {
-        //
+        $this->authorize('view', $jobRequisition);
+        $jobRequisition->load(['requestedBy', 'skills', 'department']);
+
+        return response()->json([
+            'message' => 'Job requisition retrieved successfully',
+            'data' => new JobRequisitionDetailResource($jobRequisition),
+        ], 200);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
+    public function approve(
+        ApproveJobRequisitionRequest $request,
+        JobRequisition $jobRequisition
+    ): JsonResponse {
+        $this->authorize('approve', $jobRequisition);
+
+
+        $result = $this->requisitionService->approve(
+            jobRequisition: $jobRequisition,
+            jobTitle: $request->job_title ?? $jobRequisition->job_title,
+            description: $request->description ?? $jobRequisition->description,
+        );
+
+        return response()->json([
+            'message' => 'Job requisition approved and posting created successfully.',
+            'data' => [
+                'requisition' => new JobRequisitionDetailResource($result['requisition']),
+                'posting' => new JobPostingResource($result['posting']),
+            ],
+        ], 201);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function reject(JobRequisition $jobRequisition): JsonResponse
     {
-        //
+        $this->authorize('reject', $jobRequisition);
+
+        $requisition = $this->requisitionService->reject($jobRequisition);
+
+        return response()->json([
+            'message' => 'Job requisition rejected successfully.',
+            'data' => new JobRequisitionDetailResource($requisition),
+        ]);
     }
 }

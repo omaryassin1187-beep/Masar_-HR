@@ -47,7 +47,7 @@ class LeaveRequestRequest extends FormRequest
             'days_count.integer' => 'The leave days count must be a valid number.',
             'days_count.min' => 'Leave days must be at least 1 day.',
             'days_count.max' => 'You cannot request more than 30 leave days.',
-
+            
             'reason.required' => 'The reason field is required.',
             'reason.string' => 'The reason must be a valid text.',
             'reason.min' => 'The reason must be at least 5 characters.',

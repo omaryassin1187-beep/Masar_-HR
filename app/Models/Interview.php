@@ -9,29 +9,36 @@ class Interview extends Model
     protected $fillable = [
         'candidate_id',
         'job_posting_id',
-        'date_interview',
+        'interviewed_by',
+        'scheduled_at',
         'location_type',
-        'status',
         'location_details',
-        'notes',
+        'status',
         'rate',
+        'notes',
+        'rank',
     ];
 
     protected $casts = [
-        'date_interview' => 'datetime',
+        'scheduled_at' => 'datetime',
     ];
 
     public function candidate()
     {
         return $this->belongsTo(Candidate::class, 'candidate_id');
     }
+
     public function jobPosting()
     {
         return $this->belongsTo(JobPosting::class, 'job_posting_id');
     }
 
+    public function interviewer()
+    {
+        return $this->belongsTo(User::class, 'interviewed_by');
+    }
 
-  /*    public function scopeScheduled($query)
+    public function scopeScheduled($query)
     {
         return $query->where('status', 'scheduled');
     }
@@ -41,10 +48,19 @@ class Interview extends Model
         return $query->where('status', 'done');
     }
 
-    // ─── Helpers ───────────────────────────────────────────────────
-
     public function isPassed(): bool
     {
-        return in_array($this->rate, ['excellent', 'good']);
-    } */
+        return $this->status === 'done' && $this->rate >= 6;
+    }
+
+    // إضافة دالة لتصنيف التقييم
+    public function rateLabel(): string
+    {
+        return match (true) {
+            $this->rate >= 9 => 'Excellent',
+            $this->rate >= 7 => 'Good',
+            $this->rate >= 5 => 'Average',
+            default => 'Poor',
+        };
+    }
 }

@@ -3,6 +3,10 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 return Application::configure(basePath: dirname(__DIR__))
@@ -13,6 +17,14 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
+    ->withMiddleware(function (Middleware $middleware) {
+
+        $middleware->alias([
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
+        ]);})
+
     ->withMiddleware(function (Middleware $middleware): void {
          $middleware->alias([
         'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
@@ -21,7 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-   
+
 
         $exceptions->render(function (NotFoundHttpException $e, $request) {
 

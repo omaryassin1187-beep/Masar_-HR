@@ -14,30 +14,34 @@ class JobPosting extends Model
         'description',
         'status',
     ];
-    public function jobRequisition(): BelongsTo
+
+    public function requisition(): BelongsTo
     {
         return $this->belongsTo(JobRequisition::class, 'job_requisition_id');
     }
+
     public function candidates(): HasMany
     {
         return $this->hasMany(Candidate::class, 'job_posting_id');
     }
+
     public function interviews(): HasMany
     {
         return $this->hasMany(Interview::class, 'job_posting_id');
     }
+
     public function offers(): HasMany
     {
         return $this->hasMany(Offer::class, 'job_posting_id');
     }
 
-
-    /*  public function scopeOpen($query)
+    public function scopeOpen($query)
     {
         return $query->where('status', 'open');
     }
+
     public function scopeClosed($query)
     {
         return $query->where('status', 'closed');
-    } */
+    }
 }
