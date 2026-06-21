@@ -59,9 +59,9 @@ class Candidate extends Model
         return $this->hasMany(Interview::class, 'candidate_id');
     }
 
-    public function offer(): HasOne
+    public function offers(): HasMany
     {
-        return $this->hasOne(Offer::class, 'candidate_id');
+        return $this->hasmany(Offer::class, 'candidate_id');
     }
 
     public function documents(): MorphMany

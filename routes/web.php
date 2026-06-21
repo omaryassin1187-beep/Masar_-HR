@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\userController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // use App\Http\Controllers\Controller
@@ -16,6 +17,9 @@ Route::get('home', function () {
     return view('layout/home');
 });
 
-Route::get('asd', [userController::class, 'index']);
-
-Route::post('register', [userController::class, 'store'])->name('store');
+Route::get('/set-password', function (Request $request) {
+    if (! $request->hasValidSignature()) {
+        abort(403, 'Link expired or invalid.');
+    }
+    return view('auth.set-password', ['email' => $request->email]);
+})->name('password.set');

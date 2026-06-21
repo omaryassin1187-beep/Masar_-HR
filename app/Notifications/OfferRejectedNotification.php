@@ -2,17 +2,22 @@
 
 namespace App\Notifications;
 
+use App\Models\Candidate;
 use App\Models\Offer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 class OfferRejectedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public readonly Offer $offer) {}
+    public function __construct(
+        public readonly Offer $offer,
+        public readonly ?Candidate $nextCandidate = null,
+    ) {}
 
     public function via(object $notifiable): array
     {
@@ -21,16 +26,20 @@ class OfferRejectedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $title = $this->offer->jobPosting->requisition->title;
+        $title = $this->offer->jobPosting->requisition->job_title;
         $name  = $this->offer->candidate->full_name;
+
+            Log::info('Next candidate:', ['candidate' => $this->nextCandidate?->full_name]);
 
         return (new MailMessage)
             ->subject("❌ Offer Declined — {$name}")
-            ->greeting("Hello {$notifiable->name},")
-            ->line("{$name} has declined the job offer for position: **{$title}**.")
-            ->line("Please review the ranked candidates list and send an offer to the next candidate.")
-            ->action('View Ranked Candidates', url("/job-postings/{$this->offer->job_posting_id}/interviews/ranking"))
-            ->salutation("MasarHR Team");
+            ->view('emails.offer_rejected', [
+                'hrName'        => $notifiable->full_name,
+                'candidateName' => $name,
+                'jobTitle'      => $title,
+                'nextCandidate' => $this->nextCandidate, // ← أضيفي هذا
+
+            ]);
     }
 
     public function toDatabase(object $notifiable): array

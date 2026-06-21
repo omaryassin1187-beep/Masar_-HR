@@ -21,7 +21,7 @@ class InterviewController extends Controller
 
     use AuthorizesRequests;
 
-    public function eligibleCandidates( JobPosting $jobPosting): AnonymousResourceCollection
+    public function eligibleCandidates(JobPosting $jobPosting): AnonymousResourceCollection
     {
         $this->authorize('viewEligibleCandidates', $jobPosting);
 
@@ -34,7 +34,7 @@ class InterviewController extends Controller
             ->with(['skills', 'jobPosting.requisition.skills']) // ← أضيفي هذه
 
             ->withCount([
-                'skills as matched_skills_count' => fn ($q) => $q->whereIn(
+                'skills as matched_skills_count' => fn($q) => $q->whereIn(
                     'skills.id',
                     $jobPosting->requisition->skills()->pluck('skills.id')
                 ),
@@ -82,6 +82,17 @@ class InterviewController extends Controller
             'data' => new InterviewResource($interview),
         ], 201);
     }
+    // Manager يستعرض مقابلاته المجدولة
+    public function myInterviews(): AnonymousResourceCollection
+    {
+        $interviews = Interview::where('interviewed_by', auth()->id())
+            ->where('status', 'scheduled')
+            ->with(['candidate'])
+            ->latest('scheduled_at')
+            ->get();
+
+        return InterviewResource::collection($interviews);
+    }
 
     public function updateResult(
         UpdateInterviewResultRequest $request,
@@ -95,6 +106,16 @@ class InterviewController extends Controller
             'message' => 'Interview result recorded successfully.',
             'data' => new InterviewResource($interview),
         ]);
+    }
+    public function rankedByRate(JobPosting $jobPosting): AnonymousResourceCollection
+    {
+        $interviews = $jobPosting->interviews()
+            ->where('status', 'done')
+            ->with(['candidate'])
+            ->orderByDesc('rate')
+            ->get();
+
+        return InterviewResource::collection($interviews);
     }
 
     public function submitRanking(

@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class OfferAcceptedNotification extends Notification implements ShouldQueue
+class OfferAcceptedNotification extends Notification
 {
     use Queueable;
 
@@ -26,11 +26,11 @@ class OfferAcceptedNotification extends Notification implements ShouldQueue
 
         return (new MailMessage)
             ->subject("✅ Offer Accepted — {$name}")
-            ->greeting("Hello {$notifiable->name},")
-            ->line("{$name} has accepted the job offer for position: **{$title}**.")
-            ->line("You can now proceed with creating the employment contract.")
-            ->action('View Offer', url("/offers/{$this->offer->id}"))
-            ->salutation("MasarHR Team");
+            ->view('emails.offer_accepted', [
+                'hrName'        => $notifiable->full_name,
+                'candidateName' => $name,
+                'jobTitle'      => $title,
+            ]);
     }
 
     public function toDatabase(object $notifiable): array

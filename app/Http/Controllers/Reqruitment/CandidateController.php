@@ -88,7 +88,7 @@ class CandidateController extends Controller
         );
     }
 
-    public function show(Candidate $candidate): JsonResponse
+    public function show(Candidate $candidate ): JsonResponse
     {
         $this->authorize('view', $candidate);
 

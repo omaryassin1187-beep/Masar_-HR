@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -40,10 +41,10 @@ class Setting extends Model
                 self::defaults()
             );
         }
-        
+
         return static::$instance;
     }
-    
+
     public static function defaults(): array
     {
         return [
@@ -59,4 +60,12 @@ class Setting extends Model
             'grace_period'            => 15,
         ];
     }
+
+    public function workingHoursPerDay(): int
+{
+    $checkIn  = Carbon::parse($this->expected_check_in);  // "09:00:00"
+    $checkOut = Carbon::parse($this->expected_check_out); // "17:00:00"
+
+    return (int) $checkIn->diffInHours($checkOut); // 8
+}
 }

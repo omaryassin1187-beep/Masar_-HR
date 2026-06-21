@@ -14,47 +14,47 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class ProfileController extends Controller
 {
-    
+
     public function index()
     {
         $profile = Auth::user()->profile;
-        
+
         return new ProfileResource($profile);
     }
 
-    
-   public function store(StoreProfileRequest $request)
+
+    public function store(StoreProfileRequest $request)
     {
-         $validated = $request->validated();
-         $userId=Auth::user()->id;
-         $profileData = [
-             'birth_date' => Carbon::createFromFormat('d-m-Y',$validated['birth_date'])->format('Y-m-d'),
-             'gender' => $validated['gender'],
-             'phone_number' => $validated['phone_number'],
-             'address' => $validated['address'],
-             'user_id' =>  $userId,
-             'hiring_date' => now()->format('Y-m-d')    //تجلب قيمته من تاريخ توقيع عقد العمل
-         ];
+        $validated = $request->validated();
+        $userId = Auth::user()->id;
+        $profileData = [
+            'birth_date' => Carbon::createFromFormat('d-m-Y', $validated['birth_date'])->format('Y-m-d'),
+            'gender' => $validated['gender'],
+            'phone_number' => $validated['phone_number'],
+            'address' => $validated['address'],
+            'user_id' =>  $userId,
+            'hiring_date' => now()->format('Y-m-d')    //تجلب قيمته من تاريخ توقيع عقد العمل
+        ];
 
-         if ($request->hasFile('picture')) {
-             $picturePath = $request->file('picture')->store('profile_pictures', 'public');
-             $profileData['picture'] = $picturePath;
-         }
-        
-         $profile = Profile::create($profileData);
+        if ($request->hasFile('picture')) {
+            $picturePath = $request->file('picture')->store('profile_pictures', 'public');
+            $profileData['picture'] = $picturePath;
+        }
 
-         return response()->json([
-             'message' => 'Profile created successfully',
-             'profile' => new ProfileResource($profile)
-             
-         ], 201);
+        $profile = Profile::create($profileData);
+
+        return response()->json([
+            'message' => 'Profile created successfully',
+            'profile' => new ProfileResource($profile)
+
+        ], 201);
     }
 
-   
+
     public function show(string $id)
     {
-       $profile=Profile::findOrFail($id);
-       return new ProfileResource($profile);
+        $profile = Profile::findOrFail($id);
+        return new ProfileResource($profile);
     }
 
     /**
@@ -62,13 +62,13 @@ class ProfileController extends Controller
      */
     public function update(UpdateProfileRequest $request, string $id)
     {
-           $userId = Auth::user()->id;
-           $profile=Profile::findOrFail($id);
-            if ($profile->user_id != $userId) {
+        $userId = Auth::user()->id;
+        $profile = Profile::findOrFail($id);
+        if ($profile->user_id != $userId) {
             return response()->json('Unauthenticated.', 403);
         }
-           $profile->update($request->validated());
-           return new ProfileResource($profile);
+        $profile->update($request->validated());
+        return new ProfileResource($profile);
     }
 
     /**

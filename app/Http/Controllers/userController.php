@@ -11,29 +11,24 @@ use App\Http\Resources\UserResource;
 
 class userController extends Controller
 {
-    public function putUserPassword(Request $request)
-    {
-        $validatedData = $request->validate([
-            'password' => 'required|min:8|confirmed|string',
-        ]);
-        $email = 'omar12@gmail.com';    //ايميل المتقدم ,نستطيع الوصول اليه من خلال العلاقات
-        $user = User::where('email', $email)->first();
+public function putUserPassword(Request $request)
+{
+    $request->validate([
+        'email'    => ['required', 'email', 'exists:users,email'],
+        'password' => ['required', 'min:8', 'confirmed'],
+    ]);
 
-        if (! $user) {
-            return response()->json([
-                'message' => 'User not found.',
-                'status_code' => 404,
-            ], 404);
-        }
-        $user->password = Hash::make($request->password);
-        // $user->status='active';
-        $user->save();
+    $user = User::where('email', $request->email)->first();
 
-        return response()->json([
-            'message' => 'Password put successfully.',
-            'status_code' => 200,
-        ], 200);
-    }
+    $user->update([
+        'password'       => Hash::make($request->password),
+        'is_first_login' => false,
+    ]);
+
+    return response()->json([
+        'message' => 'Password set successfully.',
+    ]);
+}
 
     public function login(Request $request)
     {
@@ -187,4 +182,21 @@ class userController extends Controller
 
         return response()->json($employees);
     }
+
+    public function changePassword(Request $request): JsonResponse
+{
+    $request->validate([
+        'password' => ['required', 'min:8', 'confirmed'],
+    ]);
+
+    $user = auth()->user();
+    $user->update([
+        'password'       => Hash::make($request->password),
+        'is_first_login' => false,
+    ]);
+
+    return response()->json([
+        'message' => 'Password changed successfully.',
+    ]);
+}
 }

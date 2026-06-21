@@ -36,6 +36,7 @@ class OfferController extends Controller
 
     public function respond(Request $request, Offer $offer): \Illuminate\Http\Response
     {
+
         if (! $request->hasValidSignature()) {
             abort(403, 'هذا الرابط غير صالح أو انتهت صلاحيته.');
         }

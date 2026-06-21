@@ -14,7 +14,7 @@ class HrSeeder extends Seeder
     {
         $HR = User::create([
             'full_name' => 'omarHR',
-            'email' => 'ommar19455@gmail.com',
+            'email' => 'sososy672005@gmail.com',
             'dep_id' => 2,
             'password' => '11111111',
             'status' => 'active',

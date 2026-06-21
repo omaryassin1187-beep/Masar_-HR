@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Department extends Model
 {
-   
+
     protected $fillable = ['name'];
 
     public function users(): HasMany
@@ -19,4 +19,5 @@ class Department extends Model
     {
         return $this->hasMany(JobRequisition::class, 'department_id');
     }
+
 }
