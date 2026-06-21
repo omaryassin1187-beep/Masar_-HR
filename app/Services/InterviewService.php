@@ -49,7 +49,7 @@ class InterviewService
                 'location_details' => $data['location_details'],
                 'status' => 'scheduled',
             ]);
-             Mail::to($interview->candidate->email)
+            Mail::to($interview->candidate->email)
                 ->send(new CandidateInterviewScheduled($interview));
 
             $interview->load(['candidate', 'jobPosting.requisition', 'interviewer']);
@@ -84,10 +84,11 @@ class InterviewService
                     ->where('job_posting_id', $jobPosting->id)
                     ->update(['rank' => $item['rank']]);
             }
+            $managerName = auth()->user()->full_name;
 
             // إشعار HR بأن الترتيب جاهز
             $hrUsers = User::role('HR')->get();
-            Notification::send($hrUsers, new InterviewsRankedNotification($jobPosting));
+            Notification::send($hrUsers, new InterviewsRankedNotification($jobPosting , $managerName));
         });
     }
 

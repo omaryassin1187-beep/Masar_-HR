@@ -30,6 +30,7 @@ class JobRequisitionController extends Controller
      */
     public function index(IndexJobRequisitionRequest $request): JsonResponse
     {
+
         $this->authorize('viewAny', JobRequisition::class);
         $user = $request->user();
 
@@ -45,7 +46,7 @@ class JobRequisitionController extends Controller
             )
 
             ->when(
-                $request->filled('department_id') && $user->hasAnyRole(['admin', 'hr']),
+                $request->filled('department_id') && $user->hasAnyRole(['admin', 'HR']),
                 fn($q) => $q->where('department_id', $request->department_id)
             )
 
@@ -59,6 +60,7 @@ class JobRequisitionController extends Controller
             )
             ->with(['skills', 'department', 'requestedBy'])
             ->latest()
+
             ->paginate($request->integer('per_page', 15));
 
         return response()->json([
@@ -131,6 +133,12 @@ class JobRequisitionController extends Controller
     {
         $this->authorize('delete', $jobRequisition);
 
+        if ($jobRequisition->status !== 'pending') {
+            return response()->json([
+                'message' => 'Only pending job requisitions can be deleted. Current status: ' . $jobRequisition->status,
+            ], 403);
+        }
+
         $jobRequisition->skills()->sync([]);
         $jobRequisition->delete();
 
@@ -164,6 +172,18 @@ class JobRequisitionController extends Controller
         ApproveJobRequisitionRequest $request,
         JobRequisition $jobRequisition
     ): JsonResponse {
+
+        if ($jobRequisition->status === 'rejected') {
+            return response()->json([
+                'message' => 'Cannot approve a rejected requisition.',
+            ], 422);
+        }
+
+        if ($jobRequisition->status === 'approved') {
+            return response()->json([
+                'message' => 'This requisition is already approved.',
+            ], 422);
+        }
         $this->authorize('approve', $jobRequisition);
 
 
@@ -184,7 +204,19 @@ class JobRequisitionController extends Controller
 
     public function reject(JobRequisition $jobRequisition): JsonResponse
     {
+         if ($jobRequisition->status === 'approved') {
+            return response()->json([
+                'message' => 'Cannot reject an approved requisition.',
+            ], 422);
+        }
+
+        if ($jobRequisition->status === 'rejected') {
+            return response()->json([
+                'message' => 'This requisition is already rejected.',
+            ], 422);
+        }
         $this->authorize('reject', $jobRequisition);
+
 
         $requisition = $this->requisitionService->reject($jobRequisition);
 

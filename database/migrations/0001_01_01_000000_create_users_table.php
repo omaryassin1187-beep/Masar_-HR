@@ -18,8 +18,9 @@ return new class extends Migration
             $table->foreignId('dep_id')->constrained('departments')->cascadeOnDelete();
             $table->enum('status', ['active', 'inactive'])->default('inactive')->nullable(false);
             $table->boolean('is_first_login')->default(true);
+            $table->timestamp('onboarding_completed_at')->nullable();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password' , 255)->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
@@ -46,7 +47,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('password')->nullable(false);
+            $table->dropColumn('onboarding_completed_at');
+        });
     }
 };

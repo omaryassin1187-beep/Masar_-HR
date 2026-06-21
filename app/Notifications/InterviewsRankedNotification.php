@@ -8,17 +8,14 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class InterviewsRankedNotification extends Notification implements ShouldQueue
+class InterviewsRankedNotification extends Notification
 {
     use Queueable;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(public readonly JobPosting $jobPosting)
-    {
-        //
-    }
+    public function __construct(public readonly JobPosting $jobPosting, public readonly string $managerName) {}
 
     /**
      * Get the notification's delivery channels.
@@ -33,14 +30,17 @@ class InterviewsRankedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $title = $this->jobPosting->requisition->job_title;
+        $url = url("/job-postings/{$this->jobPosting->id}/interviews/ranking");
 
         return (new MailMessage)
             ->subject("Candidate Rankings Ready — {$title}")
-            ->greeting("Hello {$notifiable->name},")
-            ->line("The manager has completed evaluating and ranking candidates for: **{$title}**")
-            ->line('You can now review the list and begin sending job offers.')
-            ->action('View Rankings', url("/job-postings/{$this->jobPosting->id}/interviews/ranking"))
-            ->salutation('Best regards — MasarHR Team');
+            ->view('emails.interviews_ranked', [
+                'hrName'   => $notifiable->full_name,
+                'jobTitle' => $title,
+                'url'      => $url,
+                'managerName' => $this->managerName,
+
+            ]);
     }
 
     public function toDatabase(object $notifiable): array

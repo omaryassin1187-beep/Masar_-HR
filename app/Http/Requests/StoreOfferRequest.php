@@ -56,6 +56,18 @@ class StoreOfferRequest extends FormRequest
                 return;
             }
 
+            $hasPendingOffer = Offer::where('job_posting_id', $jobPosting->id)
+                ->where('status', 'pending')
+                ->exists();
+
+            if ($hasPendingOffer) {
+                $v->errors()->add(
+                    'candidate_id',
+                    'There is already a pending offer for this job posting. Wait for a response first.'
+                );
+                return;
+            }
+
             if (! in_array($candidate->status, ['interviewed', 'qualified'])) {
                 $v->errors()->add(
                     'candidate_id',
