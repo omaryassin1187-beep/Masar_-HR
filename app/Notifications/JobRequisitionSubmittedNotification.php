@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
 class JobRequisitionSubmittedNotification extends Notification
@@ -38,4 +40,5 @@ class JobRequisitionSubmittedNotification extends Notification
             'message' => 'New job requisition submitted',
         ];
     }
+
 }
