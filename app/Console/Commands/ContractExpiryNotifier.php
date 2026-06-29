@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Contract;
 use App\Models\ContractRenewal;
 use App\Models\User;
-use App\Notifications\ContractsExpiringSoonNotification;
+use App\Notifications\contracts\ContractsExpiringSoonNotification;
 use Illuminate\Console\Command;
 
 class ContractExpiryNotifier extends Command
