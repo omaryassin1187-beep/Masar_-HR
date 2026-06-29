@@ -3,11 +3,9 @@
 namespace App\Services;
 
 use App\Models\{Contract, ContractRenewal, Setting, User};
-use App\Notifications\{
-    ContractRenewalOfferNotification,
-    ContractRenewalAcceptedNotification,
-    ContractRenewalRejectedNotification
-};
+use App\Notifications\contracts\ContractRenewalAcceptedNotification;
+use App\Notifications\contracts\ContractRenewalOfferNotification;
+use App\Notifications\contracts\ContractRenewalRejectedNotification;
 use Illuminate\Support\Facades\{DB, Hash};
 use Carbon\Carbon;
 
@@ -91,6 +89,12 @@ class ContractRenewalService
             'jurisdiction'             => $settings->jurisdiction,
             'signed_at'                => today(),
             'status'                   => Contract::STATUS_ACTIVE, // ✅ دائمًا active
+
+            'candidate_signature_path' => $oldContract->candidate_signature_path,
+            'candidate_signed_at'      => $oldContract->candidate_signed_at,
+            'hr_signature_path'        => $oldContract->hr_signature_path,
+            'hr_signed_at'             => $oldContract->hr_signed_at,
+
 
         ]);
 

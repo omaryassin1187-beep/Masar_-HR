@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Attendance_Leaves;
 
 use App\Events\HourlyLeaveRequestApproved;
-use App\Http\Requests\StoreHourlyLeaveRequest;
+use App\Http\Requests\hourly_leave_request\StoreHourlyLeaveRequest;
 use App\Models\Attendance_Leaves\HourlyLeaveEquest;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -11,8 +11,8 @@ use App\Services\AttendanceService;
 use App\Services\LeaveRequestService;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\UpdateHourlyLeaveRequest;
-use App\Http\Resources\HourlyLeaveRequestResource;
+use App\Http\Requests\hourly_leave_request\UpdateHourlyLeaveRequest;
+use App\Http\Resources\horly_leave_request\HourlyLeaveRequestResource;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\Leave_Requests\HourlyLeaveRequestRejectedNotification;

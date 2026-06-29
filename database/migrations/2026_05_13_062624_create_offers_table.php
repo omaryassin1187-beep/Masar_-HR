@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('hour_price', 10, 2);
             $table->date('start_date');
             $table->json('weekend_days'); // e.g., ["Saturday", "Sunday"]
-            $table->integer('working_hour_per_day');
+            $table->integer('working_hours_per_day');
             $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending');
             $table->timestamps();
         });

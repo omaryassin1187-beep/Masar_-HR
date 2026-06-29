@@ -8,6 +8,7 @@ use App\Http\Controllers\Attendance_Leaves\LeaveRequestController;
 use App\Http\Controllers\Attendance_Leaves\HourlyLeaveRequestController;
 use App\Http\Controllers\Attendance_Leaves\AttendanceController;
 use App\Http\Controllers\ContractRenewalController;
+use App\Http\Controllers\Reqruitment\ContractSignatureController;
 use App\Http\Controllers\Reqruitment\JobRequisitionController;
 use App\Http\Controllers\Reqruitment\OfferController;
 use App\Http\Controllers\SettingController;
@@ -33,33 +34,38 @@ Route::prefix('job-postings')->group(function () {
 Route::get('/offers/{offer}/respond', [OfferController::class, 'respond'])
     ->name('emails.respond');
 
-    Route::get('/contracts/renewals/{renewal}/respond', [ContractRenewalController::class, 'respond'])
+Route::get('/contract/preview/{offer}', [ContractSignatureController::class, 'preview'])
+    ->name('contract.preview');
+
+Route::post('/signature-store/{offer}', [ContractSignatureController::class, 'store']);
+
+Route::get('/contracts/renewals/{renewal}/respond', [ContractRenewalController::class, 'respond'])
     ->name('contracts.renewal.respond');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('logout', [userController::class, 'logout']);
     Route::post('/change-password', [userController::class, 'changePassword']);
-  
+
     Route::get('/onboarding/status',  [OnboardingController::class, 'status']);
     Route::post('/onboarding/upload', [OnboardingController::class, 'upload']);
-  
+
     Route::get('/my-documents/{document}/download', [ContractController::class, 'downloadDocument']);
-  
+
     Route::resource('leaveRequests', LeaveRequestController::class);
     Route::get('my-leave-request', [LeaveRequestController::class, 'getMyLeaveRequests']);
-  
+
     Route::resource('hourly-leave-Requests', HourlyLeaveRequestController::class);
     Route::get('my-hourly-leave-request', [HourlyLeaveRequestController::class, 'getMyHourlyLeaveRequests']);
-  
+
     Route::apiResource('profiles', ProfileController::class);
-  
+
     Route::get('/notifications', [userController::class, 'getNotifications']);
     Route::post('/notifications/{id}/read', [userController::class, 'markAsRead']);
 
     Route::put('check-in', [AttendanceController::class, 'checkIn']);
     Route::put('check-out', [AttendanceController::class, 'checkOut']);
     Route::get('my-monthly-attendance', [AttendanceController::class, 'getMyMonthlyAttendances']);
-  
+
     //---------------manager routes-------------
 
     Route::middleware(['role:manager'])->group(function () {
@@ -70,17 +76,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-interviews', [InterviewController::class, 'myInterviews']);
         Route::get('/job-postings/{jobPosting}/interviews/ranked-by-rate', [InterviewController::class, 'rankedByRate']);
 
-                Route::get('manager-employees', [userController::class, 'getManagerEmployees']);
-                Route::get('search-manager-employees', [userController::class, 'searchManagerEmployees']);
+        Route::get('manager-employees', [userController::class, 'getManagerEmployees']);
+        Route::get('search-manager-employees', [userController::class, 'searchManagerEmployees']);
 
         Route::get('department-leave-request', [LeaveRequestController::class, 'getDepartmentLeaveRequests']);
+        Route::get('department-All-leave-request', [LeaveRequestController::class, 'getDepartmentAllLeaveRequests']);
+
         Route::put('leave-requests/{id}/approve', [LeaveRequestController::class, 'approveLeaveRequest']);
         Route::put('leave-requests/{id}/reject', [LeaveRequestController::class, 'rejectLeaveRequest']);
 
         Route::get('department-hourly-leave-request', [HourlyLeaveRequestController::class, 'getDepartmentHourlyLeaveRequests']);
         Route::put('hourly-leave-requests/{id}/approve', [HourlyLeaveRequestController::class, 'approveHourlyLeaveRequest']);
         Route::put('hourly-leave-requests/{id}/reject', [HourlyLeaveRequestController::class, 'rejectHourlyLeaveRequest']);
-
     });
 
     //---------------HR routes-------------
@@ -94,7 +101,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 
-       
+
 
         Route::get('all-leave-request', [LeaveRequestController::class, 'getAllLeaveRequests']);
         Route::get('all-hourly-leave-request', [HourlyLeaveRequestController::class, 'getAllHourlyLeaveRequests']);
@@ -115,6 +122,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/job-postings/{jobPosting}/offers', [OfferController::class, 'store']);
         Route::get('/job-postings/{jobPosting}/offers',  [OfferController::class, 'index']);
+
+        Route::get('/contracts/pending-signature', [ContractSignatureController::class, 'pendingSignature']);
+
 
         Route::get('/contracts/expiring-soon', [ContractRenewalController::class, 'expiringSoon']);
         Route::post('/contracts/{contract}/renewals', [ContractRenewalController::class, 'store']);
@@ -162,7 +172,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/employees/{user}/contract',       [ContractController::class, 'showForEmployee']);
         Route::get('/employees/{user}/contract/download', [ContractController::class, 'downloadForEmployee']);
         Route::get('/employees/{user}/documents', [ContractController::class, 'documentsForEmployee']);
-      
+
         Route::get('attendance-today-analysis', [AttendanceController::class, 'getTodayAttendanceSummary']);
         Route::get('attendance-today', [AttendanceController::class, 'getTodayAttendances']);
         Route::get('attendance-filter', [AttendanceController::class, 'getFilteredAttendances']);
@@ -174,9 +184,24 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware([
     'auth:sanctum',
     'require.onboarding',
-    'role:employee',
 ])->group(function () {
     Route::get('/my/contract',          [ContractController::class, 'show']);
     Route::get('/my/contract/download', [ContractController::class, 'download']);
     Route::get('/my/documents',         [ContractController::class, 'documents']);
+});
+
+// الروابط المؤمنة بالتوقيع الرقمي للبريد الإلكتروني للـ HR (خارج Sanctum)
+Route::group(['middleware' => ['signed']], function () {
+
+    // 1. رابط عرض واستلام توقيع الـ HR (GET & POST)
+    Route::match(['get', 'post'], '/contracts/{contract}/hr-sign/{hr}', [ContractSignatureController::class, 'hrSign'])
+        ->name('contract.hr.sign');
+
+    // 2. رابط عرض وتنفيذ رفض العقد (GET & POST)
+    Route::match(['get', 'post'], '/contracts/{contract}/hr-reject/{hr}', [ContractSignatureController::class, 'hrReject'])
+        ->name('contract.hr.reject');
+
+    // 3. رابط عرض وتنفيذ طلب إعادة التوقيع (GET & POST)
+    Route::match(['get', 'post'], '/contracts/{contract}/hr-resign/{hr}', [ContractSignatureController::class, 'hrRequestResign'])
+        ->name('contract.hr.resign');
 });

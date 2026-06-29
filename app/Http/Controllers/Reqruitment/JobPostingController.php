@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Reqruitment;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\PrefillJobRequisitionRequest;
-use App\Http\Requests\UpdateJobPostingRequest;
-use App\Http\Resources\JobPostingDetailResource;
-use App\Http\Resources\JobPostingListResource;
-use App\Http\Resources\JobPostingResource;
-use App\Http\Resources\JobRequisitionDetailResource;
+use App\Http\Requests\job_requestion\PrefillJobRequisitionRequest;
+use App\Http\Requests\job_posting\UpdateJobPostingRequest;
+use App\Http\Resources\job_posting\JobPostingDetailResource;
+use App\Http\Resources\job_posting\JobPostingListResource;
+use App\Http\Resources\job_posting\JobPostingResource;
+use App\Http\Resources\job_requestion\JobRequisitionDetailResource;
 use App\Models\JobPosting;
 use App\Models\JobRequisition;
 use App\Services\JobPostingService;

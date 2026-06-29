@@ -27,6 +27,13 @@ class ContractPolicy
         return $contract->user_id === $user->id;
     }
 
+    public function signByHr(User $user, Contract $contract): bool
+    {
+        return $user->hasRole('HR')
+            && $contract->status === Contract::STATUS_AWAITING_HR_SIGNATURE
+            && $contract->candidate_signed_at !== null; // ما بيوقّع HR قبل المتقدم
+    }
+
     /**
      * Determine whether the user can create models.
      */

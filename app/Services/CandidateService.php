@@ -6,6 +6,7 @@ use App\Events\CandidateApplied;
 use App\Models\Candidate;
 use App\Models\Document;
 use App\Models\JobPosting;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -53,16 +54,20 @@ class CandidateService
 
     public function getCvForDownload(Candidate $candidate, int $expires, string $signature): array
     {
-        abort_if($expires < now()->timestamp, 410, 'The link has expired.');
-
+        if ($expires < now()->timestamp) {
+            throw new \Exception('The link has expired.', 410);
+        }
         $cvDoc = $candidate->documents->where('type', 'cv')->first();
-        abort_if(! $cvDoc, 404, 'No CV found for this candidate.');
-
-        $expected = hash_hmac('sha256', $candidate->id.'|'.$cvDoc->file_path, config('app.key'));
-        abort_if(! hash_equals($expected, $signature), 403, 'Invalid link.');
-
-        abort_if(! Storage::disk('private')->exists($cvDoc->file_path), 404, 'File not found.');
-
+        if (! $cvDoc) {
+            throw new \Exception('No CV found for this candidate.', 404);
+        }
+        $expected = hash_hmac('sha256', $candidate->id . '|' . $cvDoc->file_path, config('app.key'));
+        if (! hash_equals($expected, $signature)) {
+            throw new \Exception('Invalid link.', 403);
+        }
+        if (! Storage::disk('private')->exists($cvDoc->file_path)) {
+            throw new \Exception('File not found.', 404);
+        }
         return [$cvDoc->file_path, $cvDoc->file_name];
     }
 
@@ -77,8 +82,9 @@ class CandidateService
             Candidate::STATUS_REJECTED,
         ];
 
-        abort_unless(in_array($status, $allowed), 422, 'The requested status is not allowed.');
-
+        if (!in_array($status, $allowed)) {
+            throw new \Exception('The requested status is not allowed.', 422);
+        }
         $candidate->update(['status' => $status]);
 
         return $candidate;
@@ -90,12 +96,17 @@ class CandidateService
             ->where('email', $email)
             ->exists();
 
-        abort_if($exists, 409, 'You have already applied to this position with the same email address.');
+        if ($exists) {
+            throw new HttpResponseException(response()->json([
+                'success' => false,
+                'message' => 'You have already applied to this position with the same email address.'
+            ], 409));
+        }
     }
 
     private function uploadCv(UploadedFile $file, int $postingId): string
     {
-        $filename = time().'_'.$file->getClientOriginalName();
+        $filename = time() . '_' . $file->getClientOriginalName();
 
         return $file->storeAs("cvs/posting_{$postingId}", $filename, 'private');
     }

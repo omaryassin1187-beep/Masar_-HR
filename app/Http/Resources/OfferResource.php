@@ -15,7 +15,7 @@ class OfferResource extends JsonResource
             'hour_price'              => $this->hour_price,
             'start_date'              => $this->start_date->format('Y-m-d'),
             'weekend_days'            => $this->weekend_days,
-            'working_hour_per_day'    => $this->working_hour_per_day,
+            'working_hours_per_day'    => $this->working_hours_per_day,
             'estimated_monthly_salary'=> $this->estimatedMonthlySalary(),
             'candidate' => [
                 'id'        => $this->candidate->id,

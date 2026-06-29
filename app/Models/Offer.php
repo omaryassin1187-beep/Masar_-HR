@@ -13,7 +13,7 @@ class Offer extends Model
         'hour_price',
         'start_date',
         'weekend_days',
-        'working_hour_per_day',
+        'working_hours_per_day',
         'status',
     ];
 
@@ -37,7 +37,7 @@ class Offer extends Model
     {
         $weekendCount  = count($this->weekend_days ?? []);
         $workingDays   = 30 - ($weekendCount * 4); // تقريبي
-        return $this->hour_price * $this->working_hour_per_day * $workingDays;
+        return $this->hour_price * $this->working_hours_per_day * $workingDays;
     }
     public function isAccepted(): bool
     {
@@ -47,4 +47,6 @@ class Offer extends Model
     {
         return $this->status === 'pending';
     }
-}
+    public function contracts()
+    {
+        return $this->hasMany(Contract::class); }}

@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Reqruitment;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreInterviewRequest;
-use App\Http\Requests\SubmitRankingRequest;
-use App\Http\Requests\UpdateInterviewResultRequest;
-use App\Http\Resources\CandidateResource;
-use App\Http\Resources\InterviewResource;
+use App\Http\Requests\interview\StoreInterviewRequest;
+use App\Http\Requests\interview\SubmitRankingRequest;
+use App\Http\Requests\interview\UpdateInterviewResultRequest;
+use App\Http\Resources\candidate\CandidateResource;
+use App\Http\Resources\interview\InterviewResource;
 use App\Models\Interview;
 use App\Models\JobPosting;
 use App\Services\InterviewService;

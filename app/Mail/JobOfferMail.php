@@ -38,7 +38,7 @@ class JobOfferMail extends Mailable
                 'jobTitle'             => $offer->jobPosting->job_title,
                 'startDate'            => $offer->start_date->format('Y-m-d'),
                 'hourPrice'            => number_format($offer->hour_price, 2),
-                'workingHoursPerDay'   => $offer->working_hour_per_day,
+                'workingHoursPerDay'   => $offer->working_hours_per_day,
                 'weekendDays'          => $offer->weekend_days,
                 'estimatedMonthlySalary' => number_format($offer->estimatedMonthlySalary(), 2),
                 'acceptUrl'            => $this->acceptUrl,

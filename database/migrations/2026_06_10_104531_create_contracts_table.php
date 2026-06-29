@@ -23,8 +23,13 @@ return new class extends Migration
             $table->integer('probation_period_days')->default(50);
             $table->integer('termination_notice_days');
             $table->string('jurisdiction');
+            $table->string('candidate_signature_path')->nullable();
+            $table->timestamp('candidate_signed_at')->nullable();
+            $table->string('hr_signature_path')->nullable();
+            $table->timestamp('hr_signed_at')->nullable();
             $table->date('signed_at')->nullable();
-            $table->enum('status', ['probation', 'active', 'terminated', 'expired'])->default('probation');
+            $table->enum('status', ['active', 'probation', 'expired', 'non_renewable',
+            'awaiting_hr_signature','awaiting_candidate_signature'])->default('awaiting_hr_signature');
             $table->timestamps();
         });
     }

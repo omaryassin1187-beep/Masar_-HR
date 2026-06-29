@@ -371,7 +371,7 @@ namespace App\Models{
  * @property numeric $hour_price
  * @property \Illuminate\Support\Carbon $start_date
  * @property array<array-key, mixed> $weekend_days
- * @property int $working_hour_per_day
+ * @property int $working_hours_per_day
  * @property string $status
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at

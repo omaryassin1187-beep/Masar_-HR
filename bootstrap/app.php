@@ -45,33 +45,29 @@ return Application::configure(basePath: dirname(__DIR__))
             'require.onboarding'       => \App\Http\Middleware\RequireOnboardingCompletion::class,
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
-
-
-        $exceptions->render(function (NotFoundHttpException $e, $request) {
-
-            if ($e->getPrevious() instanceof ModelNotFoundException) {
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Model Not Found',
-                ], 404);
-            }
-
+->withExceptions(function (Exceptions $exceptions): void {
+    $exceptions->render(function (NotFoundHttpException $e, $request) {
+        if ($e->getPrevious() instanceof ModelNotFoundException) {
             return response()->json([
                 'success' => false,
-                'message' => 'Route Not Found',
+                'message' => 'Model Not Found',
             ], 404);
-        });
+        }
 
-        // General Exceptions
-        $exceptions->render(function (Throwable $e, $request) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Route Not Found',
+        ], 404);
+    });
 
-            return response()->json([
-                'success' => false,
-                'message' => config('app.debug')
-                    ? $e->getMessage()
-                    : 'Something Went Wrong',
-            ], 500);
-        });
-    })->create();
+    $exceptions->render(function (Throwable $e, $request) {
+        $statusCode = method_exists($e, 'getCode') && $e->getCode() >= 400 && $e->getCode() < 600
+            ? $e->getCode()
+            : 500;
+
+        return response()->json([
+            'success' => false,
+            'message' => config('app.debug') ? $e->getMessage() : 'Something Went Wrong',
+        ], $statusCode);
+    });
+})->create();

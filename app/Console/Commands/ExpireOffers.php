@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Offer;
 use App\Models\Candidate;
 use App\Models\User;
-use App\Notifications\OfferExpiredNotification;
+use App\Notifications\offers\OfferExpiredNotification;
 use Illuminate\Console\Command;
 
 class ExpireOffers extends Command

@@ -11,24 +11,24 @@ use App\Http\Resources\UserResource;
 
 class userController extends Controller
 {
-public function putUserPassword(Request $request)
-{
-    $request->validate([
-        'email'    => ['required', 'email', 'exists:users,email'],
-        'password' => ['required', 'min:8', 'confirmed'],
-    ]);
+    public function putUserPassword(Request $request)
+    {
+        $request->validate([
+            'email'    => ['required', 'email', 'exists:users,email'],
+            'password' => ['required', 'min:8', 'confirmed'],
+        ]);
 
-    $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
 
-    $user->update([
-        'password'       => Hash::make($request->password),
-        'is_first_login' => false,
-    ]);
+        $user->update([
+            'password'       => Hash::make($request->password),
+            'is_first_login' => false,
+        ]);
 
-    return response()->json([
-        'message' => 'Password set successfully.',
-    ]);
-}
+        return response()->json([
+            'message' => 'Password set successfully.',
+        ]);
+    }
 
     public function login(Request $request)
     {
@@ -99,6 +99,8 @@ public function putUserPassword(Request $request)
 
         $employees = User::role('employee')
             ->where('dep_id', $manager->dep_id)
+            ->with('profile')
+
             ->get();
 
         return UserResource::collection($employees);
@@ -184,21 +186,21 @@ public function putUserPassword(Request $request)
     }
 
     public function changePassword(Request $request): JsonResponse
-{
-    $request->validate([
-        'password' => ['required', 'min:8', 'confirmed'],
-    ]);
+    {
+        $request->validate([
+            'password' => ['required', 'min:8', 'confirmed'],
+        ]);
 
-    $user = auth()->user();
-    $user->update([
-        'password'       => Hash::make($request->password),
-        'is_first_login' => false,
-    ]);
+        $user = auth()->user();
+        $user->update([
+            'password'       => Hash::make($request->password),
+            'is_first_login' => false,
+        ]);
 
-    return response()->json([
-        'message' => 'Password changed successfully.',
-    ]);
-}
+        return response()->json([
+            'message' => 'Password changed successfully.',
+        ]);
+    }
     public function searchEmployees(Request $request)
     {
         $search = trim($request->search);
@@ -232,5 +234,4 @@ public function putUserPassword(Request $request)
 
         return response()->json($employees);
     }
-        
 }
