@@ -4,6 +4,7 @@ namespace App\Http\Requests\interview;
 
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class UpdateInterviewResultRequest extends FormRequest
 {
@@ -29,10 +30,13 @@ class UpdateInterviewResultRequest extends FormRequest
         ];
     }
 
-    protected function failedAuthorization(): never
-    {
-        throw new AuthorizationException(
-            'Cannot record result: the interview is not in scheduled status.'
-        );
-    }
+ protected function failedAuthorization()
+{
+    throw new HttpResponseException(
+        response()->json([
+            'success' => false,
+            'message' => 'Cannot record result: the interview is not in scheduled status.'
+        ], 403)
+    );
+}
 }

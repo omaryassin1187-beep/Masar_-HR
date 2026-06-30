@@ -11,25 +11,30 @@ use App\Http\Resources\UserResource;
 
 class userController extends Controller
 {
-    public function putUserPassword(Request $request)
-    {
-        $request->validate([
-            'email'    => ['required', 'email', 'exists:users,email'],
-            'password' => ['required', 'min:8', 'confirmed'],
-        ]);
+public function putUserPassword(Request $request)
+{
+    $request->validate([
+        'email'    => ['required', 'email', 'exists:users,email'],
+        'password' => ['required', 'min:8', 'confirmed'],
+    ]);
 
-        $user = User::where('email', $request->email)->first();
+    $user = User::where('email', $request->email)->first();
 
-        $user->update([
-            'password'       => Hash::make($request->password),
-            'is_first_login' => false,
-        ]);
-
+    if ($user->is_first_login === false || $user->password !== null) {
         return response()->json([
-            'message' => 'Password set successfully.',
-        ]);
+            'message' => 'Security alert: Password has already been configured for this account.'
+        ], 422);
     }
 
+    $user->update([
+        'password'       => Hash::make($request->password),
+        'is_first_login' => false,
+    ]);
+
+    return response()->json([
+        'message' => 'Password set successfully.',
+    ], 200);
+}
     public function login(Request $request)
     {
         $request->validate([

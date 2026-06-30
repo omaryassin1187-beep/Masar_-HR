@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Notifications\interview\InterviewAssignedNotification;
 use App\Notifications\interview\InterviewsRankedNotification;
 use Carbon\Carbon;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
@@ -35,7 +36,7 @@ class InterviewService
             ->where(function ($query) use ($data) {
                 $query->whereBetween('scheduled_at', [
                     Carbon::parse($data['scheduled_at'])->subMinutes(29),
-                    Carbon::parse($data['scheduled_at'])->addMinutes(2),
+                    Carbon::parse($data['scheduled_at'])->addMinutes(29),
                 ]);
             })
             ->exists();
@@ -82,15 +83,32 @@ class InterviewService
 
     public function submitRanking(JobPosting $jobPosting, array $ranking): void
     {
+
         DB::transaction(function () use ($jobPosting, $ranking) {
 
-        foreach ($ranking as $item) {
+            // ✅ 1️⃣ امسحي كل الـ ranks القديمة لهذا الإعلان
+            Interview::where('job_posting_id', $jobPosting->id)
+                ->where('status', 'done')
+                ->update(['rank' => null]);
+
+          // ✅ 2️⃣ تحقق من عدم تكرار الـ ranks في الطلب الجديد
+        $ranks = array_column($ranking, 'rank');
+        if (count($ranks) !== count(array_unique($ranks))) {
+            throw new HttpResponseException(response()->json([
+                'success' => false,
+                'message' => 'Duplicate ranks are not allowed.'
+            ], 422));
+        }
+
+            // ✅ 3️⃣ ضبط الـ ranks الجديدة
+            foreach ($ranking as $item) {
                 Interview::where('id', $item['interview_id'])
                     ->where('job_posting_id', $jobPosting->id)
                     ->update(['rank' => $item['rank']]);
             }
-            $managerName = auth()->user()->full_name;
 
+            // ✅ 4️⃣ إشعار HR
+            $managerName = auth()->user()->full_name;
             $hrUsers = User::role('HR')->get();
             Notification::send($hrUsers, new InterviewsRankedNotification($jobPosting, $managerName));
         });

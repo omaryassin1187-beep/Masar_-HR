@@ -19,11 +19,28 @@ Route::get('home', function () {
     return view('layout/home');
 });
 
+use App\Models\User;
+
 Route::get('/set-password', function (Request $request) {
     if (! $request->hasValidSignature()) {
         abort(403, 'Link expired or invalid.');
     }
-    return view('auth.set-password', ['email' => $request->email]);
+
+    // 🛡️ فحص هندسي: التحقق مما إذا كان المستخدم قد قام بتعيين كلمة المرور مسبقاً
+    $user = User::where('email', $request->email)->first();
+
+    if ($user && $user->password) {
+        // إذا كانت كلمة المرور موجودة، نرسل متغير يشير إلى أن الرابط مستهلك
+        return view('auth.set-password', [
+            'email' => $request->email,
+            'alreadySet' => true
+        ]);
+    }
+
+    return view('auth.set-password', [
+        'email' => $request->email,
+        'alreadySet' => false
+    ]);
 })->name('password.set');
 
 // روابط توقيع العقود الإلكترونية - MasarHR (خارج Sanctum ومؤمنة بالتوقيع الرقمي للرابط)
