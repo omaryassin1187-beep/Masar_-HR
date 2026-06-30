@@ -4,6 +4,7 @@ namespace App\Http\Requests\interview;
 
 use App\Models\Interview;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Validator;
 
 class SubmitRankingRequest extends FormRequest
@@ -32,27 +33,37 @@ class SubmitRankingRequest extends FormRequest
     }
 
     public function withValidator(Validator $validator): void
-    {
-        $validator->after(function (Validator $v) {
-            $ranking = $this->input('ranking', []);
-            $jobPosting = $this->route('jobPosting');
-            // التحقق من عدم وجود تكرار في الرتب
-            $ranks = array_column($ranking, 'rank');
-            if (count($ranks) !== count(array_unique($ranks))) {
-                $v->errors()->add('ranking', 'Duplicate ranks are not allowed.');
+{
+    $validator->after(function (Validator $v) {
+        $ranking = $this->input('ranking', []);
+        $jobPosting = $this->route('jobPosting');
 
-                return;
-            }
-            // التحقق من أن جميع المقابلات تنتمي لنفس الوظيفة وحالتها "done"
-            $interviewIds = array_column($ranking, 'interview_id');
-            $valid = Interview::whereIn('id', $interviewIds)
-                ->where('job_posting_id', $jobPosting->id)
-                ->where('status', 'done')
-                ->count();
-            // إذا كان عدد المقابلات الصالحة لا يساوي عدد المقابلات في الترتيب، فهذا يعني أن هناك مقابلة غير صالحة
-            if ($valid !== count($interviewIds)) {
-                $v->errors()->add('ranking', 'Some interviews are not completed or do not belong to this job posting.');
-            }
-        });
-    }
+      // 1️⃣ التحقق من عدم وجود تكرار في الرتب
+        $ranks = array_column($ranking, 'rank');
+        if (count($ranks) !== count(array_unique($ranks))) {
+            throw new HttpResponseException(
+                response()->json([
+                    'success' => false,
+                    'message' => 'Duplicate ranks are not allowed.'
+                ], 422)
+            );}
+
+        // 2️⃣ التحقق من صيانة المقابلات وهويتها
+        $interviewIds = array_column($ranking, 'interview_id');
+        $valid = Interview::whereIn('id', $interviewIds)
+            ->where('job_posting_id', $jobPosting->id)
+            ->where('status', 'done')
+            ->count();
+
+
+        if ($valid !== count($interviewIds)) {
+            throw new HttpResponseException(
+                response()->json([
+                    'success' => false,
+                    'message' => 'Some interviews are not completed or do not belong to this job posting.'
+                ], 422)
+            );
+        }
+    });
+}
 }

@@ -75,6 +75,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/interviews/{interview}/result', [InterviewController::class, 'updateResult']);
         Route::get('/my-interviews', [InterviewController::class, 'myInterviews']);
         Route::get('/job-postings/{jobPosting}/interviews/ranked-by-rate', [InterviewController::class, 'rankedByRate']);
+        Route::patch('/interviews/{interview}/reject', [InterviewController::class, 'rejectCandidate']);
+
 
         Route::get('manager-employees', [userController::class, 'getManagerEmployees']);
         Route::get('search-manager-employees', [userController::class, 'searchManagerEmployees']);
