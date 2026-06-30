@@ -218,7 +218,8 @@
                 <p style="color: #a0aec0; font-size: 12px; margin: 0;" class="signature-pending">Awaiting Signature</p>
             </div>
         </td>
-        <!-- مسافة فارغة بين التوقيعين بنسبة 10% -->
+
+
         <td style="width: 10%; border: none;"></td>
         <td style="width: 45%; border: none; text-align: center; padding: 0;">
             <div style="border-top: 1px solid #a0aec0; padding-top: 8px;">
