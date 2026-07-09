@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Reqruitment\InterviewController;
 use App\Http\Controllers\Reqruitment\CandidateController;
 use App\Http\Controllers\Reqruitment\JobPostingController;
@@ -66,6 +67,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('check-out', [AttendanceController::class, 'checkOut']);
     Route::get('my-monthly-attendance', [AttendanceController::class, 'getMyMonthlyAttendances']);
 
+
+
+    Route::get('/announcements/active', [AnnouncementController::class, 'announcementsActive']);
+    Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show']);
     //---------------manager routes-------------
 
     Route::middleware(['role:manager'])->group(function () {
@@ -178,6 +183,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('attendance-today-analysis', [AttendanceController::class, 'getTodayAttendanceSummary']);
         Route::get('attendance-today', [AttendanceController::class, 'getTodayAttendances']);
         Route::get('attendance-filter', [AttendanceController::class, 'getFilteredAttendances']);
+
+
+        Route::get('/announcements', [AnnouncementController::class, 'index']);
+        Route::post('/announcements', [AnnouncementController::class, 'store']);
+        Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update']);
+        Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy']);
+        Route::patch('/announcements/{announcement}/publish', [AnnouncementController::class, 'publish']);
     });
 });
 
