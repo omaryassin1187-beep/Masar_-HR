@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Reqruitment;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\candidate\StoreCandidateRequest;
-use App\Http\Resources\CandidateListResource;
-use App\Http\Resources\CandidateResource;
+use App\Http\Resources\candidate\CandidateListResource;
+use App\Http\Resources\candidate\CandidateResource;
 use App\Models\Candidate;
 use App\Models\JobPosting;
 use App\Services\CandidateService;

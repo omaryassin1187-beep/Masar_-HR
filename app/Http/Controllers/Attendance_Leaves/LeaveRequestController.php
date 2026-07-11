@@ -7,9 +7,9 @@ use App\Events\LeaveRequestSubmitted;
 use App\Events\LeaveRequestDeleted;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\LeaveRequestRequest;
-use App\Http\Requests\UpdateLeaveRequestRequest;
-use App\Http\Resources\LeaveRequestResource;
+use App\Http\Requests\leave_request\LeaveRequestRequest;
+use App\Http\Requests\leave_request\UpdateLeaveRequestRequest;
+use App\Http\Resources\leave_request\LeaveRequestResource;
 use App\Services\AttendanceService;
 use App\Models\Attendance_Leaves\LeaveRequest;
 use App\Models\User;
@@ -43,7 +43,7 @@ class LeaveRequestController extends Controller
         ]);
     }
 
-    
+
     public function store(LeaveRequestRequest $request)
     {
         $validatedData = $request->validated();
@@ -60,7 +60,7 @@ class LeaveRequestController extends Controller
             $validatedData['days_count']
         );
 
-        if ($this->leaveRequestService->hasLeaveRequestOverlap($validatedData)) 
+        if ($this->leaveRequestService->hasLeaveRequestOverlap($validatedData))
         {
             return response()->json([
                 'message' => 'The requested leave period overlaps with an existing leave request.'
@@ -77,36 +77,36 @@ class LeaveRequestController extends Controller
         ]);
     }
 
-    
+
     public function show(string $id)
     {
            $leaveRequest= LeaveRequest::findOrFail($id);
-           $this->leaveRequestService->checkUserAuthrization($leaveRequest);  
+           $this->leaveRequestService->checkUserAuthrization($leaveRequest);
            return response()->json(new LeaveRequestResource($leaveRequest),200);
     }
 
-    
+
     public function update(UpdateLeaveRequestRequest $request, string $id)
     {
            $leaveRequest= LeaveRequest::findOrFail($id);
-           $this->leaveRequestService->checkUserAuthrization($leaveRequest); 
+           $this->leaveRequestService->checkUserAuthrization($leaveRequest);
            if ($leaveRequest->status !== 'pending') {
             return response()->json([
                 'message' => 'Cannot update leave request. Only pending requests can be modified.'
             ], 403);
          }
-         
+
            $leaveRequest->update($request->validated());
-           $this->leaveRequestService->notifyManagerAboutUpdate($leaveRequest); 
+           $this->leaveRequestService->notifyManagerAboutUpdate($leaveRequest);
            return response()->json([
             'message' => 'Leave request updated successfully.',
             'data'    =>  new LeaveRequestResource($leaveRequest),
          ]);
 
-        
+
     }
 
-    
+
     public function destroy(string $id)
 {
     $leaveRequest = LeaveRequest::findOrFail($id);
@@ -168,7 +168,7 @@ class LeaveRequestController extends Controller
             'status' => 'rejected',
         ]);
 
-        $LeaveRequestOwner = $leaveRequest->user; 
+        $LeaveRequestOwner = $leaveRequest->user;
         Notification::send( $LeaveRequestOwner, new LeaveRequestRejectedNotification($leaveRequest));
 
         return response()->json([
@@ -194,6 +194,24 @@ class LeaveRequestController extends Controller
                     ->role('employee');
 
             })
+            ->get();
+
+        return LeaveRequestResource::collection($leaveRequests);
+    }
+    public function getDepartmentAllLeaveRequests()
+    {
+
+
+        $manager = auth()->user();
+
+        $leaveRequests = LeaveRequest::with('user')
+            ->whereHas('user', function ($query) use ($manager) {
+
+                $query->where('dep_id', $manager->dep_id)
+                    ->role('employee');
+
+            })
+            ->latest()
             ->get();
 
         return LeaveRequestResource::collection($leaveRequests);

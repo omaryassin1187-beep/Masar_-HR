@@ -20,6 +20,12 @@ public function putUserPassword(Request $request)
 
     $user = User::where('email', $request->email)->first();
 
+    if ($user->is_first_login === false || $user->password !== null) {
+        return response()->json([
+            'message' => 'Security alert: Password has already been configured for this account.'
+        ], 422);
+    }
+
     $user->update([
         'password'       => Hash::make($request->password),
         'is_first_login' => false,
@@ -27,9 +33,8 @@ public function putUserPassword(Request $request)
 
     return response()->json([
         'message' => 'Password set successfully.',
-    ]);
+    ], 200);
 }
-
     public function login(Request $request)
     {
         $request->validate([
@@ -99,6 +104,8 @@ public function putUserPassword(Request $request)
 
         $employees = User::role('employee')
             ->where('dep_id', $manager->dep_id)
+            ->with('profile')
+
             ->get();
 
         return UserResource::collection($employees);
@@ -184,21 +191,21 @@ public function putUserPassword(Request $request)
     }
 
     public function changePassword(Request $request): JsonResponse
-{
-    $request->validate([
-        'password' => ['required', 'min:8', 'confirmed'],
-    ]);
+    {
+        $request->validate([
+            'password' => ['required', 'min:8', 'confirmed'],
+        ]);
 
-    $user = auth()->user();
-    $user->update([
-        'password'       => Hash::make($request->password),
-        'is_first_login' => false,
-    ]);
+        $user = auth()->user();
+        $user->update([
+            'password'       => Hash::make($request->password),
+            'is_first_login' => false,
+        ]);
 
-    return response()->json([
-        'message' => 'Password changed successfully.',
-    ]);
-}
+        return response()->json([
+            'message' => 'Password changed successfully.',
+        ]);
+    }
     public function searchEmployees(Request $request)
     {
         $search = trim($request->search);
@@ -232,5 +239,4 @@ public function putUserPassword(Request $request)
 
         return response()->json($employees);
     }
-        
 }

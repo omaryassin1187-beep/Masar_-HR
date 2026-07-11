@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\{Contract, ContractRenewal};
 use App\Services\ContractRenewalService;
-use App\Http\Requests\StoreContractRenewalRequest;
+use App\Http\Requests\contract_renewal\StoreContractRenewalRequest;
 use App\Http\Resources\ContractRenewalResource;
-use App\Http\Resources\ContractResource;
-use App\Notifications\ContractNonRenewableNotification;
+use App\Http\Resources\contract\ContractResource;
+use App\Notifications\contracts\ContractNonRenewableNotification;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\{JsonResponse, Request, Response};
 

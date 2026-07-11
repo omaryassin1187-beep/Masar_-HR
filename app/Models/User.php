@@ -94,9 +94,10 @@ class User extends Authenticatable
     {
         return $this->hasMany(Attendance::class);
     }
-    public function contract(): HasOne
-    {
-        return $this->hasOne(Contract::class);
-    }
+ public function contracts()
+{
+    return $this->hasMany(Contract::class);
+}
+
 
 }

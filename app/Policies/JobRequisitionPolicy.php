@@ -32,8 +32,7 @@ class JobRequisitionPolicy
     public function update(User $user, JobRequisition $jobRequisition): bool
     {
         return $user->hasRole('manager')
-            && $jobRequisition->requested_by === $user->id
-            && ! $jobRequisition->jobPosting()->exists();
+            && $jobRequisition->requested_by === $user->id;
     }
 
     /**

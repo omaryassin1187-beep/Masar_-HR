@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Reqruitment;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreInterviewRequest;
-use App\Http\Requests\SubmitRankingRequest;
-use App\Http\Requests\UpdateInterviewResultRequest;
-use App\Http\Resources\CandidateResource;
-use App\Http\Resources\InterviewResource;
+use App\Http\Requests\interview\StoreInterviewRequest;
+use App\Http\Requests\interview\SubmitRankingRequest;
+use App\Http\Requests\interview\UpdateInterviewResultRequest;
+use App\Http\Resources\candidate\CandidateResource;
+use App\Http\Resources\interview\InterviewResource;
 use App\Models\Interview;
 use App\Models\JobPosting;
 use App\Services\InterviewService;
@@ -117,11 +117,39 @@ class InterviewController extends Controller
 
         return InterviewResource::collection($interviews);
     }
+    public function rejectCandidate(Interview $interview): JsonResponse
+{
+    $this->authorize('updateResult', $interview);
+
+    if ($interview->status === 'done') {
+        return response()->json([
+            'message' => 'Cannot reject a completed interview.'
+        ], 422);
+    }
+
+    if ($interview->status === 'cancelled') {
+        return response()->json([
+            'message' => 'Interview is already cancelled.'
+        ], 422);
+    }
+
+    $interview->update([
+        'status' => 'cancelled',
+        'notes' => 'Candidate rejected by manager',
+    ]);
+
+    $interview->candidate->update(['status' => 'rejected']);
+
+    return response()->json([
+        'message' => 'Candidate rejected successfully.'
+    ]);
+}
 
     public function submitRanking(
         SubmitRankingRequest $request,
         JobPosting $jobPosting
     ): JsonResponse {
+
         $this->authorize('submitRanking', $jobPosting);
 
         $this->service->submitRanking($jobPosting, $request->validated()['ranking']);

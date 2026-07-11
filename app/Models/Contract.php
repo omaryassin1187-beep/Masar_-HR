@@ -10,11 +10,16 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Contract extends Model
 {
+    const STATUS_AWAITING_HR_SIGNATURE = 'awaiting_hr_signature';
+    const STATUS_AWAITING_CANDIDATE_SIGNATURE = 'awaiting_candidate_signature';
+
     const STATUS_PROBATION  = 'probation';
     const STATUS_ACTIVE     = 'active';
     const STATUS_TERMINATED = 'terminated';
     const STATUS_EXPIRED    = 'expired';
     const STATUS_NON_RENEWABLE = 'non_renewable';
+
+
 
     const PROBATION_DAYS = 50;
 
@@ -29,6 +34,11 @@ class Contract extends Model
         'probation_period_days',
         'termination_notice_days',
         'jurisdiction',
+        'status',
+        'candidate_signature_path',
+        'candidate_signed_at',   // ⚠️ تأكدي من وجودهم
+        'hr_signature_path',
+        'hr_signed_at',
         'signed_at',
         'status',
     ];
@@ -38,6 +48,7 @@ class Contract extends Model
         'start_date'     => 'date',
         'end_date'       => 'date',
         'signed_at'      => 'date',
+
     ];
 
     public function user(): BelongsTo

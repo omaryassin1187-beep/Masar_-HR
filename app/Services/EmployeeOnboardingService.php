@@ -5,8 +5,8 @@ namespace App\Services;
 
 use App\Models\{Offer, User, Contract, Candidate, Setting};
 use App\Models\Attendance_Leaves\LeaveBalance;
+use App\Notifications\offers\OfferAcceptedNotification;
 use App\Notifications\WelcomeEmployeeNotification;
-use App\Notifications\OfferAcceptedNotification;
 use Illuminate\Support\Facades\{DB, Hash};
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
@@ -14,7 +14,6 @@ use Carbon\Carbon;
 
 class EmployeeOnboardingService
 {
-    //هذه الخدمة مسؤولة عن إتمام عملية التوظيف بعد قبول العرض الوظيفي، بما في ذلك إنشاء حساب الموظف، إنشاء العقد، وتحديث حالة المرشح
     public function createFromOffer(Offer $offer): User
     {
         return DB::transaction(function () use ($offer) {
@@ -33,7 +32,7 @@ class EmployeeOnboardingService
                 'user_id'                  => $user->id,
                 'offer_id'                 => $offer->id,
                 'hour_price'               => $offer->hour_price,
-                'working_hours_per_day' => $offer->working_hour_per_day,
+                'working_hours_per_day' => $offer->working_hours_per_day,
                 'weekend_days'             => $offer->weekend_days,
                 'start_date'               => $startDate,
                 'end_date'                 => $startDate->copy()->addYear(),
@@ -61,13 +60,12 @@ class EmployeeOnboardingService
 
     public function completeOnboarding(User $user): void
     {
-        //تحديث حالة الموظف إلى نشط، وتحديث تاريخ إتمام عملية الانضمام في العقد
         DB::transaction(function () use ($user) {
             $user->update([
                 'onboarding_completed_at' => now(),
             ]);
 
-            $user->contract()->update([
+            $user->contracts()->update([
                 'signed_at' => today(),
             ]);
         });

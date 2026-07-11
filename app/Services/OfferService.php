@@ -9,10 +9,8 @@ use App\Models\Interview;
 use App\Models\JobPosting;
 use App\Models\Offer;
 use App\Models\User;
-use App\Notifications\AutoOfferSentNotification;
-use App\Notifications\NoMoreCandidatesNotification;
-use App\Notifications\OfferAcceptedNotification;
-use App\Notifications\OfferRejectedNotification;
+use App\Notifications\candidate\NoMoreCandidatesNotification;
+use App\Notifications\offers\OfferRejectedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
@@ -24,13 +22,15 @@ class OfferService
     public function send(JobPosting $jobPosting, array $data): Offer
     {
         return DB::transaction(function () use ($jobPosting, $data) {
+
+
             $offer = Offer::create([
                 'candidate_id'         => $data['candidate_id'],
                 'job_posting_id'       => $jobPosting->id,
                 'hour_price'           => $data['hour_price'],
                 'start_date'           => $data['start_date'],
                 'weekend_days'         => $data['weekend_days'],
-                'working_hour_per_day' => $data['working_hour_per_day'],
+                'working_hours_per_day' => $data['working_hours_per_day'],
                 'status'               => 'pending',
             ]);
 
@@ -83,7 +83,6 @@ class OfferService
     //تحديث حالة العرض إلى مقبول، إغلاق الإعلان الوظيفي، وإطلاق حدث لإنشاء حساب الموظف الجديد
     {
         $offer->update(['status' => 'accepted']);
-        $offer->jobPosting->update(['status' => 'closed']);
         OfferAccepted::dispatch($offer);
     }
 

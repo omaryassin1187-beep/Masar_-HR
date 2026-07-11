@@ -15,3 +15,6 @@ Schedule::command(DetermineAttendanceStatus::class)->everyTenMinutes();//everyMi
 Schedule::command('offers:expire')->daily();
 Schedule::command('contracts:notify-expiring')->daily();
 Schedule::command('contracts:update-statuses')->daily();
+
+Schedule::command('candidates:daily-report')->dailyAt('17:00');
+

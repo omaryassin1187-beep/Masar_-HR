@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Seeder;
 
 class AdminSeeder extends Seeder
@@ -16,7 +17,7 @@ class AdminSeeder extends Seeder
             'full_name' => 'ceo',
             'email' => 'omar12@gmail.com',
             'dep_id' => 1,
-            'password' => '11111111',
+'password' => Hash::make('11111111'),
         ]);
         $admin->assignRole('admin');
         $admin->leaveBalance()->createMany([
