@@ -58,6 +58,9 @@ class Setting extends Model
             'annual_leave_days'       => 14,
             'currency'                => 'SYP',
             'grace_period'            => 15,
+            'company_latitude'        =>33.5154600,
+            'company_longitude'       =>36.2788800,
+            'allowed_radius'          =>200
         ];
     }
 

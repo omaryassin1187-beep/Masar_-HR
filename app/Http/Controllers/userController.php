@@ -153,42 +153,49 @@ public function putUserPassword(Request $request)
         ], 200);
     }
 
-    public function searchManagerEmployees(Request $request)
-    {
-        $search = trim($request->search);
+    public function searchEmployees(Request $request)
+{
+    $search = trim($request->search);
 
-        $manager = auth()->user();
+    $user = auth()->user();
 
-        $employees = User::role('employee')
-            ->where('dep_id', $manager->dep_id)
-            ->where('full_name', 'like', "%{$search}%")
-            ->get();
+    $query = User::role('employee');
 
-        // إذا لم يجد نتائج مطابقة
-        if ($employees->isEmpty()) {
-
-            $employees = User::role('employee')
-                ->where('dep_id', $manager->dep_id)
-                ->get()
-                ->map(function ($employee) use ($search) {
-
-                    similar_text(
-                        strtolower($search),
-                        strtolower($employee->full_name),
-                        $percent
-                    );
-
-                    $employee->similarity = $percent;
-
-                    return $employee;
-                })
-                ->sortByDesc('similarity')
-                ->take(5)
-                ->values();
-        }
-
-        return response()->json($employees);
+    // المدير يرى موظفي قسمه فقط
+    if ($user->hasRole('manager')) {
+        $query->where('dep_id', $user->dep_id);
     }
+
+    // Admin و HR يرون جميع الموظفين
+
+    $employees = (clone $query)
+        ->where('full_name', 'like', "%{$search}%")
+        ->get();
+
+    // إذا لم يجد نتائج مطابقة
+    if ($employees->isEmpty()) {
+
+        $employees = $query
+            ->get()
+            ->map(function ($employee) use ($search) {
+
+                similar_text(
+                    mb_strtolower($search),
+                    mb_strtolower($employee->full_name),
+                    $percent
+                );
+
+                $employee->similarity = $percent;
+
+                return $employee;
+            })
+            ->sortByDesc('similarity')
+            ->take(5)
+            ->values();
+    }
+
+    return response()->json($employees);
+}
 
     public function changePassword(Request $request): JsonResponse
     {
@@ -206,37 +213,5 @@ public function putUserPassword(Request $request)
             'message' => 'Password changed successfully.',
         ]);
     }
-    public function searchEmployees(Request $request)
-    {
-        $search = trim($request->search);
-
-
-        $employees = User::role('employee')
-            ->where('full_name', 'like', "%{$search}%")
-            ->get();
-
-        // إذا لم يجد نتائج مطابقة
-        if ($employees->isEmpty()) {
-
-            $employees = User::role('employee')
-                ->get()
-                ->map(function ($employee) use ($search) {
-
-                    similar_text(
-                        strtolower($search),
-                        strtolower($employee->full_name),
-                        $percent
-                    );
-
-                    $employee->similarity = $percent;
-
-                    return $employee;
-                })
-                ->sortByDesc('similarity')
-                ->take(5)
-                ->values();
-        }
-
-        return response()->json($employees);
-    }
+   
 }

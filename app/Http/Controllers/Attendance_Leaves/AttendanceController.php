@@ -6,89 +6,107 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use App\Models\Attendance_Leaves\Attendance;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\attendance\CheckinRequest;
 use App\Models\Attendance_Leaves\HourlyLeaveEquest;
+use App\Services\AttendanceService;
 
 class AttendanceController extends Controller
 {
+    public function __construct(
+        protected AttendanceService $attendanceService,
+    ) {}
 
+    public function checkIn(CheckinRequest $request)
+    {
 
-    public function checkIn()
-{
-    $attendance = Attendance::firstOrCreate([
-        'user_id' => auth()->id(),
-        'date'    => today(),
-    ]);
+        $data = $request->validated();
 
-    // لا يسمح بوجود جلسة مفتوحة
-    $openSession = $attendance->sessions()
-        ->whereNull('check_out')
-        ->exists();
+        if (! $this->attendanceService->isInsideCompany($data['latitude'], $data['longitude'])) {
+            throw ValidationException::withMessages([
+                'location' => ['You are outside the company location.'],
+            ]);
+        }
 
-    if ($openSession) {
-        throw ValidationException::withMessages([
-            'check_in' => ['You are already checked in.'],
-        ]);
-    }
-
-    // عدد الجلسات الحالية
-    $sessionCount = $attendance->sessions()->count();
-
-    // عدد الإجازات الساعية المعتمدة
-    $hourlyLeavesCount = HourlyLeaveEquest::where('user_id', auth()->id())
-        ->whereDate('date', today())
-        ->where('status', 'approved')
-        ->whereTime('start_time', '<=', now()->format('H:i:s'))
-        ->count();
-
-    // الحد الأقصى للجلسات = عدد الإجازات + 1
-    if ($sessionCount >= ($hourlyLeavesCount + 1)) {
-
-        throw ValidationException::withMessages([
-            'check_in' => [
-                'You are not allowed to check in again without an approved hourly leave.'
-            ],
+        $attendance = Attendance::firstOrCreate([
+            'user_id' => auth()->id(),
+            'date'    => today(),
         ]);
 
-    }
+        // لا يسمح بوجود جلسة مفتوحة
+        $openSession = $attendance->sessions()
+            ->whereNull('check_out')
+            ->exists();
 
-    $attendance->sessions()->create([
-        'check_in' => now(),
-    ]);
+        if ($openSession) {
+            throw ValidationException::withMessages([
+                'check_in' => ['You are already checked in.'],
+            ]);
+        }
 
-    return response()->json([
-        'message' => 'Check in completed successfully.',
-    ], 200);
-}
+        // عدد الجلسات الحالية
+        $sessionCount = $attendance->sessions()->count();
 
-    public function checkOut()
-{
-    $attendance = Attendance::where('user_id', auth()->id())
-        ->whereDate('date', today())
-        ->firstOrFail();
+        // عدد الإجازات الساعية المعتمدة
+        $hourlyLeavesCount = HourlyLeaveEquest::where('user_id', auth()->id())
+            ->whereDate('date', today())
+            ->where('status', 'approved')
+            ->whereTime('start_time', '<=', now()->format('H:i:s'))
+            ->count();
 
-    $session = $attendance->sessions()
-        ->whereNull('check_out')
-        ->latest('check_in')
-        ->first();
+        // الحد الأقصى للجلسات = عدد الإجازات + 1
+        if ($sessionCount >= ($hourlyLeavesCount + 1)) {
 
-    if (!$session) {
+            throw ValidationException::withMessages([
+                'check_in' => [
+                    'You are not allowed to check in again without an approved hourly leave.'
+                ],
+            ]);
+        }
 
-        throw ValidationException::withMessages([
-            'check_out' => [
-                'There is no active check in.'
-            ],
+        $attendance->sessions()->create([
+            'check_in' => now(),
         ]);
 
+        return response()->json([
+            'message' => 'Check in completed successfully.',
+        ], 200);
     }
 
-    $session->update([
-        'check_out' => now(),
-    ]);
+    public function checkOut(CheckinRequest $request)
+    {
+        $data = $request->validated();
 
-    return response()->json([
-        'message' => 'Check out completed successfully.',
-    ], 200);
-}
+        if (! $this->attendanceService->isInsideCompany($data['latitude'], $data['longitude'])) {
+            throw ValidationException::withMessages([
+                'location' => ['You are outside the company location.'],
+            ]);
+        }
+        $attendance = Attendance::where('user_id', auth()->id())
+            ->whereDate('date', today())
+            ->firstOrFail();
+
+        $session = $attendance->sessions()
+            ->whereNull('check_out')
+            ->latest('check_in')
+            ->first();
+
+        if (!$session) {
+
+            throw ValidationException::withMessages([
+                'check_out' => [
+                    'There is no active check in.'
+                ],
+            ]);
+        }
+
+        $session->update([
+            'check_out' => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'Check out completed successfully.',
+        ], 200);
+    }
 
     public function getTodayAttendanceSummary(): array
     {

@@ -27,15 +27,15 @@ class LeaveRequestController extends Controller
 {
 
     public function __construct(
-                protected AttendanceService $attendanceService,
-                protected LeaveRequestService $leaveRequestService
+        protected AttendanceService $attendanceService,
+        protected LeaveRequestService $leaveRequestService
     ) {}
 
 
 
     public function index()
     {
-       $leaveRequest = Auth::user()->leaveRequest;
+        $leaveRequest = Auth::user()->leaveRequest;
 
         return response()->json([
             'message' => 'Leaves request retrieved successfully',
@@ -47,12 +47,11 @@ class LeaveRequestController extends Controller
     public function store(LeaveRequestRequest $request)
     {
         $validatedData = $request->validated();
-        $validatedData['user_id']=Auth::user()->id;
-        $validatedData['status']=  auth()->user()->hasRole('employee') ? 'pending': 'approved';
-        if(!$this->attendanceService->isWorkingDay($request->start_date))
-       {
-        return response()->json([ 'message'=>$request->date.' This date is holiday']);
-       }
+        $validatedData['user_id'] = Auth::user()->id;
+        $validatedData['status'] =  auth()->user()->hasRole('employee') ? 'pending' : 'approved';
+        if (!$this->attendanceService->isWorkingDay($request->start_date)) {
+            return response()->json(['message' => $request->date . ' This date is holiday']);
+        }
 
         $this->leaveRequestService->validateBalance(
             Auth::user(),
@@ -60,16 +59,15 @@ class LeaveRequestController extends Controller
             $validatedData['days_count']
         );
 
-        if ($this->leaveRequestService->hasLeaveRequestOverlap($validatedData))
-        {
+        if ($this->leaveRequestService->hasLeaveRequestOverlap($validatedData)) {
             return response()->json([
                 'message' => 'The requested leave period overlaps with an existing leave request.'
             ], 422);
         }
 
-       $leaveRequest  = LeaveRequest::create($validatedData);
+        $leaveRequest  = LeaveRequest::create($validatedData);
 
-       LeaveRequestSubmitted::dispatch(Auth::user(),$leaveRequest);
+        LeaveRequestSubmitted::dispatch(Auth::user(), $leaveRequest);
 
         return response()->json([
             'message' => 'Leave request submitted successfully.',
@@ -80,57 +78,55 @@ class LeaveRequestController extends Controller
 
     public function show(string $id)
     {
-           $leaveRequest= LeaveRequest::findOrFail($id);
-           $this->leaveRequestService->checkUserAuthrization($leaveRequest);
-           return response()->json(new LeaveRequestResource($leaveRequest),200);
+        $leaveRequest = LeaveRequest::findOrFail($id);
+        $this->leaveRequestService->checkUserAuthrization($leaveRequest);
+        return response()->json(new LeaveRequestResource($leaveRequest), 200);
     }
 
 
     public function update(UpdateLeaveRequestRequest $request, string $id)
     {
-           $leaveRequest= LeaveRequest::findOrFail($id);
-           $this->leaveRequestService->checkUserAuthrization($leaveRequest);
-           if ($leaveRequest->status !== 'pending') {
+        $leaveRequest = LeaveRequest::findOrFail($id);
+        $this->leaveRequestService->checkUserAuthrization($leaveRequest);
+        if ($leaveRequest->status !== 'pending') {
             return response()->json([
                 'message' => 'Cannot update leave request. Only pending requests can be modified.'
             ], 403);
-         }
+        }
 
-           $leaveRequest->update($request->validated());
-           $this->leaveRequestService->notifyManagerAboutUpdate($leaveRequest);
-           return response()->json([
+        $leaveRequest->update($request->validated());
+        $this->leaveRequestService->notifyManagerAboutUpdate($leaveRequest);
+        return response()->json([
             'message' => 'Leave request updated successfully.',
             'data'    =>  new LeaveRequestResource($leaveRequest),
-         ]);
-
-
+        ]);
     }
 
 
     public function destroy(string $id)
-{
-    $leaveRequest = LeaveRequest::findOrFail($id);
-    $this->leaveRequestService->checkUserAuthrization($leaveRequest);
+    {
+        $leaveRequest = LeaveRequest::findOrFail($id);
+        $this->leaveRequestService->checkUserAuthrization($leaveRequest);
 
-    if ($leaveRequest->status !== 'pending') {
+        if ($leaveRequest->status !== 'pending') {
+            return response()->json([
+                'message' => 'Cannot delete this request'
+            ], 403);
+        }
+
+        // 1. تحميل علاقة المستخدم مسبقاً للتأكد من وجودها بالذاكرة
+        $leaveRequest->load('user');
+
+        // 2. إطلاق الحدث والإشعار أولاً
+        LeaveRequestDeleted::dispatch(Auth::user(), $leaveRequest);
+
+        // 3. الحذف يتم في النهاية تماماً
+        $leaveRequest->delete();
+
         return response()->json([
-            'message' => 'Cannot delete this request'
-        ], 403);
+            'message' => 'Deleted successfully'
+        ]);
     }
-
-    // 1. تحميل علاقة المستخدم مسبقاً للتأكد من وجودها بالذاكرة
-    $leaveRequest->load('user');
-
-    // 2. إطلاق الحدث والإشعار أولاً
-    LeaveRequestDeleted::dispatch(Auth::user(), $leaveRequest);
-
-    // 3. الحذف يتم في النهاية تماماً
-    $leaveRequest->delete();
-
-    return response()->json([
-        'message' => 'Deleted successfully'
-    ]);
-}
 
 
     public function approveLeaveRequest(string $id)
@@ -141,7 +137,7 @@ class LeaveRequestController extends Controller
             return response()->json([
                 'message' => ' Only pending requests can be modified.'
             ], 403);
-         }
+        }
         $leaveRequest->update([
             'status' => 'approved',
         ]);
@@ -151,7 +147,7 @@ class LeaveRequestController extends Controller
         return response()->json([
             'message' => 'Leave request approved successfully.',
             'data'    =>  new LeaveRequestResource($leaveRequest),
-         ]);
+        ]);
     }
 
 
@@ -160,25 +156,25 @@ class LeaveRequestController extends Controller
         $leaveRequest = LeaveRequest::findOrFail($id);
         Gate::authorize('checkManager', $leaveRequest->user);
         if ($leaveRequest->status !== 'pending') {
-                    return response()->json([
-                        'message' => ' Only pending requests can be modified.'
-                    ], 403);
-                }
+            return response()->json([
+                'message' => ' Only pending requests can be modified.'
+            ], 403);
+        }
         $leaveRequest->update([
             'status' => 'rejected',
         ]);
 
         $LeaveRequestOwner = $leaveRequest->user;
-        Notification::send( $LeaveRequestOwner, new LeaveRequestRejectedNotification($leaveRequest));
+        Notification::send($LeaveRequestOwner, new LeaveRequestRejectedNotification($leaveRequest));
 
         return response()->json([
             'message' => 'Leave request rjected successfully.',
             'data'    =>  new LeaveRequestResource($leaveRequest),
-         ]);
+        ]);
     }
 
 
-     public function getDepartmentLeaveRequests(Request $request)
+    public function getDepartmentLeaveRequests(Request $request)
     {
         $validated = $request->validate([
             'status' => 'required|in:pending,approved,rejected'
@@ -192,7 +188,6 @@ class LeaveRequestController extends Controller
 
                 $query->where('dep_id', $manager->dep_id)
                     ->role('employee');
-
             })
             ->get();
 
@@ -209,7 +204,6 @@ class LeaveRequestController extends Controller
 
                 $query->where('dep_id', $manager->dep_id)
                     ->role('employee');
-
             })
             ->latest()
             ->get();
@@ -258,6 +252,34 @@ class LeaveRequestController extends Controller
             'user_id' => $employee->id,
             'leave_balances' => $employee->leaveBalance->map(function ($balance) {
 
+                return [
+                    'leave_type' => $balance->leave_type,
+                    'total_days' => $balance->total_days,
+                    'used_days' => $balance->used_days,
+                    'remaining_days' => $balance->total_days !== null
+                        ? $balance->total_days - $balance->used_days
+                        : null,
+                ];
+            }),
+        ]);
+    }
+
+    public function getMyLeaveBalances()
+    {
+        
+        $employee = Auth::user();
+
+        if (!$employee) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        // 4. جيب الـ leaveBalance مع المستخدم
+        $employee->load('leaveBalance');
+
+        return response()->json([
+            'user_id' => $employee->id,
+            'user_name' => $employee->full_name, // إضافة مفيدة
+            'leave_balances' => $employee->leaveBalance->map(function ($balance) {
                 return [
                     'leave_type' => $balance->leave_type,
                     'total_days' => $balance->total_days,
