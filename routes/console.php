@@ -18,3 +18,5 @@ Schedule::command('contracts:update-statuses')->daily();
 
 Schedule::command('candidates:daily-report')->dailyAt('17:00');
 
+Schedule::command('announcements:update-status')->everyTenMinutes();
+

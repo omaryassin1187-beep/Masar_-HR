@@ -16,7 +16,7 @@ class UpdateInterviewResultRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'rate' => ['required', 'integer', 'min:1', 'max:10'],
+            'rate' => ['required', 'integer', 'min:1', 'max:5'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
@@ -26,7 +26,7 @@ class UpdateInterviewResultRequest extends FormRequest
         return [
             'rate.required' => 'Rating is required.',
             'rate.min' => 'Minimum rating is 1.',
-            'rate.max' => 'Maximum rating is 10.',
+            'rate.max' => 'Maximum rating is 5.',
         ];
     }
 

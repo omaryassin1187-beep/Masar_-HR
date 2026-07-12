@@ -6,7 +6,9 @@
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
 
 <div style="text-align: center; margin-bottom: 15px;">
-    <img src="{{ $message->embed(public_path('images/logo.jpg')) }}" alt="MasarHR Logo" style="max-width: 150px; height: auto;">
+  <div class="logo">
+        <img src="{{ asset('images/logo.jpg') }}" alt="MasarHR Logo">
+    </div>
 </div>
     <div style="background-color: #4A7C59; padding: 20px; border-radius: 8px 8px 0 0;">
     <h1 style="color: #ffffff; margin: 0;">Interview Invitation</h1>

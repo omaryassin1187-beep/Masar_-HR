@@ -20,7 +20,7 @@ return new class extends Migration
             $table->enum('location_type', ['online', 'on_site'])->default('online');
             $table->string('location_details')->nullable();
             $table->enum('status', ['scheduled', 'done', 'cancelled'])->default('scheduled');
-            $table->unsignedTinyInteger('rate')->nullable();   // 1-10
+            $table->unsignedTinyInteger('rate')->nullable();   // 1-5
             $table->text('notes')->nullable();
             $table->unsignedSmallInteger('rank')->nullable();  // ترتيب المدير النهائي
             $table->timestamps();
