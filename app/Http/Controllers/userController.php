@@ -164,7 +164,6 @@ public function putUserPassword(Request $request)
             ->where('full_name', 'like', "%{$search}%")
             ->get();
 
-        // إذا لم يجد نتائج مطابقة
         if ($employees->isEmpty()) {
 
             $employees = User::role('employee')
@@ -215,7 +214,6 @@ public function putUserPassword(Request $request)
             ->where('full_name', 'like', "%{$search}%")
             ->get();
 
-        // إذا لم يجد نتائج مطابقة
         if ($employees->isEmpty()) {
 
             $employees = User::role('employee')
@@ -239,4 +237,32 @@ public function putUserPassword(Request $request)
 
         return response()->json($employees);
     }
+
+//لجلب موظفين + مدير القسم حسب القسم الحالي للمستخدم
+public function getDepartmentUsers(): JsonResponse
+{
+    $user = auth()->user();
+
+    $users = User::where('dep_id', $user->dep_id)
+        ->where('id', '!=', $user->id)
+        ->select('id', 'full_name', 'email', 'dep_id')
+        ->with('roles')
+        ->get()
+        ->map(function ($user) {
+            return [
+                'id' => $user->id,
+                'full_name' => $user->full_name,
+                'email' => $user->email,
+                'role' => $user->roles->first()?->name ?? 'employee',
+                'is_manager' => $user->hasRole('manager'),
+            ];
+        });
+
+    $sorted = $users->sortByDesc('is_manager')->values();
+
+    return response()->json([
+        'success' => true,
+        'data' => $sorted,
+    ]);
+}
 }

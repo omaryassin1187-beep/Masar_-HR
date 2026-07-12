@@ -20,6 +20,7 @@ Route::get('home', function () {
 });
 
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 
 Route::get('/set-password', function (Request $request) {
     if (! $request->hasValidSignature()) {
@@ -43,12 +44,14 @@ Route::get('/set-password', function (Request $request) {
     ]);
 })->name('password.set');
 
+
 // روابط توقيع العقود الإلكترونية - MasarHR (خارج Sanctum ومؤمنة بالتوقيع الرقمي للرابط)
 // روابط توقيع العقود الإلكترونية - MasarHR (خارج Sanctum ومؤمنة بالتوقيع الرقمي للرابط)
 Route::group(['middleware' => ['signed']], function () {
 
     // لف الروابط بـ Name Prefix متوافق مع نداءات الـ Listeners والـ Notifications
     Route::name('contracts.')->group(function () {
+
 
         // ===== المتقدم (Candidate) =====
         Route::match(['get', 'post'], '/offers/{offer}/sign', [ContractSignatureController::class, 'candidateSign'])

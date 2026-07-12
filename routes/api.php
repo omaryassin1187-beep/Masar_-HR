@@ -8,6 +8,7 @@ use App\Http\Controllers\Attendance_Leaves\HolidayController;
 use App\Http\Controllers\Attendance_Leaves\LeaveRequestController;
 use App\Http\Controllers\Attendance_Leaves\HourlyLeaveRequestController;
 use App\Http\Controllers\Attendance_Leaves\AttendanceController;
+use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\ContractRenewalController;
 use App\Http\Controllers\Reqruitment\ContractSignatureController;
 use App\Http\Controllers\Reqruitment\JobRequisitionController;
@@ -43,6 +44,9 @@ Route::post('/signature-store/{offer}', [ContractSignatureController::class, 'st
 Route::get('/contracts/renewals/{renewal}/respond', [ContractRenewalController::class, 'respond'])
     ->name('contracts.renewal.respond');
 
+
+
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('logout', [userController::class, 'logout']);
     Route::post('/change-password', [userController::class, 'changePassword']);
@@ -69,8 +73,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 
+
     Route::get('/announcements/active', [AnnouncementController::class, 'announcementsActive']);
     Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show']);
+
+    Route::get('/department/users', [UserController::class, 'getDepartmentUsers']);
+
+    Route::get('/complaints/{complaint}', [ComplaintController::class, 'show']);
+
+
     //---------------manager routes-------------
 
     Route::middleware(['role:manager'])->group(function () {
@@ -95,6 +106,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('department-hourly-leave-request', [HourlyLeaveRequestController::class, 'getDepartmentHourlyLeaveRequests']);
         Route::put('hourly-leave-requests/{id}/approve', [HourlyLeaveRequestController::class, 'approveHourlyLeaveRequest']);
         Route::put('hourly-leave-requests/{id}/reject', [HourlyLeaveRequestController::class, 'rejectHourlyLeaveRequest']);
+    });
+
+
+    //--------------- manager & Employee routes-------------
+
+    Route::middleware(['role:employee|manager'])->group(function () {
+
+        Route::post('/complaints', [ComplaintController::class, 'store']);
+        Route::get('/my-complaints', [ComplaintController::class, 'myComplaints']);
     });
 
     //---------------HR routes-------------
@@ -131,13 +151,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/job-postings/{jobPosting}/offers',  [OfferController::class, 'index']);
 
         Route::get('/contracts/pending-signature', [ContractSignatureController::class, 'pendingSignature']);
-
-
         Route::get('/contracts/expiring-soon', [ContractRenewalController::class, 'expiringSoon']);
-        Route::post('/contracts/{contract}/renewals', [ContractRenewalController::class, 'store']);
 
+        Route::post('/contracts/{contract}/renewals', [ContractRenewalController::class, 'store']);
         Route::patch('/contracts/{contract}/non-renewable', [ContractRenewalController::class, 'rejectRenewal']);
+
+        Route::get('/complaints', [ComplaintController::class, 'index']);
+        Route::patch('/complaints/{complaint}/mark-under-review', [ComplaintController::class, 'markUnderReview']);
+        Route::post('/complaints/{complaint}/respond', [ComplaintController::class, 'respond']);
     });
+
 
     //---------------Admin routes-------------
 
@@ -194,6 +217,9 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 
+
+
+
 //------------------Employee routes------------------
 Route::middleware([
     'auth:sanctum',
@@ -207,15 +233,15 @@ Route::middleware([
 // الروابط المؤمنة بالتوقيع الرقمي للبريد الإلكتروني للـ HR (خارج Sanctum)
 Route::group(['middleware' => ['signed']], function () {
 
-    // 1. رابط عرض واستلام توقيع الـ HR (GET & POST)
+    // 1. رابط عرض واستلام توقيع الـ
     Route::match(['get', 'post'], '/contracts/{contract}/hr-sign/{hr}', [ContractSignatureController::class, 'hrSign'])
         ->name('contract.hr.sign');
 
-    // 2. رابط عرض وتنفيذ رفض العقد (GET & POST)
+    // 2. رابط عرض وتنفيذ رفض العقد
     Route::match(['get', 'post'], '/contracts/{contract}/hr-reject/{hr}', [ContractSignatureController::class, 'hrReject'])
         ->name('contract.hr.reject');
 
-    // 3. رابط عرض وتنفيذ طلب إعادة التوقيع (GET & POST)
+    // 3. رابط عرض وتنفيذ طلب إعادة التوقيع
     Route::match(['get', 'post'], '/contracts/{contract}/hr-resign/{hr}', [ContractSignatureController::class, 'hrRequestResign'])
         ->name('contract.hr.resign');
 });
