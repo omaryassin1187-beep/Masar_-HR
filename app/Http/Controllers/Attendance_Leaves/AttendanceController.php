@@ -6,56 +6,105 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use App\Models\Attendance_Leaves\Attendance;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\attendance\CheckinRequest;
+use App\Models\Attendance_Leaves\HourlyLeaveEquest;
+use App\Services\AttendanceService;
 
 class AttendanceController extends Controller
 {
+    public function __construct(
+        protected AttendanceService $attendanceService,
+    ) {}
 
-
-    public function checkIn()
+    public function checkIn(CheckinRequest $request)
     {
-        $attendance = Attendance::where('user_id', Auth()->user()->id)
-            ->whereDate('date', today())
-            ->firstOrFail();
 
-        if ($attendance->check_in) {
+        $data = $request->validated();
+
+        if (! $this->attendanceService->isInsideCompany($data['latitude'], $data['longitude'])) {
             throw ValidationException::withMessages([
-                'check_in' => ['You have already checked in today.'],
+                'location' => ['You are outside the company location.'],
             ]);
         }
 
-        $attendance->update([
-            'check_in' => now()->format('H:i:s'),
+        $attendance = Attendance::firstOrCreate([
+            'user_id' => auth()->id(),
+            'date'    => today(),
+        ]);
+
+        // لا يسمح بوجود جلسة مفتوحة
+        $openSession = $attendance->sessions()
+            ->whereNull('check_out')
+            ->exists();
+
+        if ($openSession) {
+            throw ValidationException::withMessages([
+                'check_in' => ['You are already checked in.'],
+            ]);
+        }
+
+        // عدد الجلسات الحالية
+        $sessionCount = $attendance->sessions()->count();
+
+        // عدد الإجازات الساعية المعتمدة
+        $hourlyLeavesCount = HourlyLeaveEquest::where('user_id', auth()->id())
+            ->whereDate('date', today())
+            ->where('status', 'approved')
+            ->whereTime('start_time', '<=', now()->format('H:i:s'))
+            ->count();
+
+        // الحد الأقصى للجلسات = عدد الإجازات + 1
+        if ($sessionCount >= ($hourlyLeavesCount + 1)) {
+
+            throw ValidationException::withMessages([
+                'check_in' => [
+                    'You are not allowed to check in again without an approved hourly leave.'
+                ],
+            ]);
+        }
+
+        $attendance->sessions()->create([
+            'check_in' => now(),
         ]);
 
         return response()->json([
-            'message' => 'Check-in completed successfully.'
+            'message' => 'Check in completed successfully.',
         ], 200);
     }
 
-    public function checkOut()
+    public function checkOut(CheckinRequest $request)
     {
+        $data = $request->validated();
+
+        if (! $this->attendanceService->isInsideCompany($data['latitude'], $data['longitude'])) {
+            throw ValidationException::withMessages([
+                'location' => ['You are outside the company location.'],
+            ]);
+        }
         $attendance = Attendance::where('user_id', auth()->id())
             ->whereDate('date', today())
             ->firstOrFail();
 
-        if (!$attendance->check_in) {
+        $session = $attendance->sessions()
+            ->whereNull('check_out')
+            ->latest('check_in')
+            ->first();
+
+        if (!$session) {
+
             throw ValidationException::withMessages([
-                'check_out' => ['You must check in before checking out.'],
+                'check_out' => [
+                    'There is no active check in.'
+                ],
             ]);
         }
 
-        if ($attendance->check_out) {
-            throw ValidationException::withMessages([
-                'check_out' => ['You have already checked out today.'],
-            ]);
-        }
-
-        $attendance->update([
-            'check_out' => now()->format('H:i:s'),
+        $session->update([
+            'check_out' => now(),
         ]);
 
         return response()->json([
-            'message' => 'Check-out completed successfully.'
+            'message' => 'Check out completed successfully.',
         ], 200);
     }
 

@@ -58,6 +58,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::resource('leaveRequests', LeaveRequestController::class);
     Route::get('my-leave-request', [LeaveRequestController::class, 'getMyLeaveRequests']);
+    Route::get('my-leave-balance', [LeaveRequestController::class, 'getMyLeaveBalances']);
+
 
     Route::resource('hourly-leave-Requests', HourlyLeaveRequestController::class);
     Route::get('my-hourly-leave-request', [HourlyLeaveRequestController::class, 'getMyHourlyLeaveRequests']);
@@ -95,7 +97,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
         Route::get('manager-employees', [userController::class, 'getManagerEmployees']);
-        Route::get('search-manager-employees', [userController::class, 'searchManagerEmployees']);
 
         Route::get('department-leave-request', [LeaveRequestController::class, 'getDepartmentLeaveRequests']);
         Route::get('department-All-leave-request', [LeaveRequestController::class, 'getDepartmentAllLeaveRequests']);
@@ -213,6 +214,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update']);
         Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy']);
         Route::patch('/announcements/{announcement}/publish', [AnnouncementController::class, 'publish']);
+      
+        Route::get('search-employees', [userController::class, 'searchEmployees']);
+
     });
 });
 

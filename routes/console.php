@@ -10,7 +10,7 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command(CreateDailyAttendanceRecords::class)->dailyAt('08:00');//;
+Schedule::command(CreateDailyAttendanceRecords::class)->dailyAt('08:00');//everyMinute();
 Schedule::command(DetermineAttendanceStatus::class)->everyTenMinutes();//everyMinute();
 Schedule::command('offers:expire')->daily();
 Schedule::command('contracts:notify-expiring')->daily();
