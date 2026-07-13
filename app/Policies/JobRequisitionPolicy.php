@@ -9,7 +9,7 @@ class JobRequisitionPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'hr', 'manager']);
+        return $user->hasAnyRole(['admin', 'HR', 'manager']);
     }
 
     public function view(User $user, JobRequisition $jobRequisition): bool
@@ -32,8 +32,7 @@ class JobRequisitionPolicy
     public function update(User $user, JobRequisition $jobRequisition): bool
     {
         return $user->hasRole('manager')
-            && $jobRequisition->requested_by === $user->id
-            && ! $jobRequisition->jobPosting()->exists();
+            && $jobRequisition->requested_by === $user->id;
     }
 
     /**
@@ -41,8 +40,7 @@ class JobRequisitionPolicy
      */
     public function delete(User $user, JobRequisition $jobRequisition): bool
     {
-        return $jobRequisition->requested_by === $user->id
-            && ! $jobRequisition->jobPosting()->exists();
+        return $jobRequisition->requested_by === $user->id;
     }
 
     /**

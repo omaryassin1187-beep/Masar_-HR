@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Reqruitment;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreOfferRequest;
+use App\Http\Requests\offer\StoreOfferRequest;
 use App\Http\Resources\OfferResource;
 use App\Models\JobPosting;
 use App\Models\Offer;
@@ -29,21 +29,22 @@ class OfferController extends Controller
         $offer = $this->service->send($jobPosting, $request->validated());
 
         return response()->json([
-            'message' => 'تم إرسال العرض الوظيفي بنجاح.',
+            'message' => 'Job offer sent successfully',
             'data'    => new OfferResource($offer),
         ], 201);
     }
 
     public function respond(Request $request, Offer $offer): \Illuminate\Http\Response
     {
+
         if (! $request->hasValidSignature()) {
-            abort(403, 'هذا الرابط غير صالح أو انتهت صلاحيته.');
+            abort(403, 'This link is invalid or has expired.');
         }
 
         $action = $request->query('action');
 
         if (! in_array($action, ['accept', 'reject'])) {
-            abort(400, 'إجراء غير صحيح.');
+            abort(400,  'Invalid action.');
         }
 
         $message = $this->service->respond($offer, $action);

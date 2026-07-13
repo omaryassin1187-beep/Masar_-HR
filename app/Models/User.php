@@ -10,6 +10,7 @@ use App\Models\Attendance_Leaves\LeaveRequest;
 use App\Models\Attendance_Leaves\HourlyLeaveEquest;
 use App\Models\Salary\Deduction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -18,7 +19,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory,HasRoles,Notifiable;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -31,6 +32,9 @@ class User extends Authenticatable
         'password',
         'dep_id',
         'status',
+        'is_first_login',
+        'onboarding_completed_at',
+
     ];
 
     /**
@@ -58,7 +62,7 @@ class User extends Authenticatable
 
     public function profile()
     {
-       return $this->hasOne(Profile::class);
+        return $this->hasOne(Profile::class);
     }
 
     public function department()
@@ -74,12 +78,12 @@ class User extends Authenticatable
 
     public function leaveBalance()
     {
-       return $this->hasMany(LeaveBalance::class);
+        return $this->hasMany(LeaveBalance::class);
     }
 
     public function leaveRequest()
     {
-       return $this->hasMany(LeaveRequest::class);
+        return $this->hasMany(LeaveRequest::class);
     }
 
     public function hourlyLeaveRequest()
@@ -97,4 +101,8 @@ class User extends Authenticatable
         return $this->hasMany(Deduction::class);
     }
 
+    public function contracts()
+    {
+        return $this->hasMany(Contract::class);
+    }
 }

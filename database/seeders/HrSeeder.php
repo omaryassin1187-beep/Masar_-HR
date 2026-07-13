@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+
 
 class HrSeeder extends Seeder
 {
@@ -14,31 +16,31 @@ class HrSeeder extends Seeder
     {
         $HR = User::create([
             'full_name' => 'omarHR',
-            'email' => 'ommar19455@gmail.com',
+            'email' => 'sososy672005@gmail.com',
             'dep_id' => 2,
-            'password' => '11111111',
+            'password' => Hash::make('11111111'),
             'status' => 'active',
         ]);
         $HR->assignRole('HR');
 
-                 $HR->leaveBalance()->createMany([
+        $HR->leaveBalance()->createMany([
 
             [
                 'leave_type' => 'annual',
                 'used_days' => 0,
-                'total_days'=>30,
+                'total_days' => 30,
             ],
 
             [
                 'leave_type' => 'sick',
-                 'used_days' => 0,
-                'total_days'=>15
+                'used_days' => 0,
+                'total_days' => 15
             ],
 
             [
                 'leave_type' => 'unpaid',
                 'used_days' => 0,
-                'total_days'=>null
+                'total_days' => null
             ],
 
         ]);

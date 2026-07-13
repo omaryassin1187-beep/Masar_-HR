@@ -6,8 +6,10 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class LeaveRequestRejectedNotification extends Notification
+class LeaveRequestRejectedNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -18,7 +20,7 @@ class LeaveRequestRejectedNotification extends Notification
 
     public function __construct($LeaveRequest)
     {
-       $this->LeaveRequest=$LeaveRequest;
+        $this->LeaveRequest = $LeaveRequest;
     }
 
     /**
@@ -28,10 +30,10 @@ class LeaveRequestRejectedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'broadcast'];
     }
 
-    
+
 
     /**
      * Get the array representation of the notification.
@@ -41,10 +43,22 @@ class LeaveRequestRejectedNotification extends Notification
     public function toDatabase(object $notifiable): array
     {
         return [
-            'type'          =>$this->LeaveRequest->type,
-            'start_date'    =>$this->LeaveRequest->start_date,
-            'days_count'    =>$this->LeaveRequest->days_count,
+            'type'          => $this->LeaveRequest->type,
+            'start_date'    => $this->LeaveRequest->start_date,
+            'days_count'    => $this->LeaveRequest->days_count,
+            'reason'        => $this->LeaveRequest->reason,
             'message'       => 'Your Leave Request has been rejected'
         ];
+    }
+
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'type'       => $this->LeaveRequest->type,
+            'start_date' => $this->LeaveRequest->start_date,
+            'days_count' => $this->LeaveRequest->days_count,
+            'reason'     => $this->LeaveRequest->reason,
+            'message'    => 'Your Leave Request has been rejected'
+        ]);
     }
 }

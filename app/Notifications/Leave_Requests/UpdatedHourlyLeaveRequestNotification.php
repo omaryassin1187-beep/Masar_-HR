@@ -6,8 +6,9 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-
-class UpdatedHourlyLeaveRequestNotification extends Notification
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Notifications\Messages\BroadcastMessage;
+class UpdatedHourlyLeaveRequestNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -15,7 +16,7 @@ class UpdatedHourlyLeaveRequestNotification extends Notification
 
     public function __construct($HourlyLeaveRequest)
     {
-       $this->HourlyLeaveRequest=$HourlyLeaveRequest;
+        $this->HourlyLeaveRequest = $HourlyLeaveRequest;
     }
 
     /**
@@ -25,10 +26,10 @@ class UpdatedHourlyLeaveRequestNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'broadcast'];
     }
 
-   
+
     /**
      * Get the array representation of the notification.
      *
@@ -37,12 +38,24 @@ class UpdatedHourlyLeaveRequestNotification extends Notification
     public function toDatabase(object $notifiable): array
     {
         return [
-            'employee'      =>$this->HourlyLeaveRequest->user->full_name,
-            'date'          =>$this->HourlyLeaveRequest->date,
-            'start_time'    =>$this->HourlyLeaveRequest->start_time,
-            'end_time'      =>$this->HourlyLeaveRequest->end_time,
-            'reason'        =>$this->HourlyLeaveRequest->reason,
+            'employee'      => $this->HourlyLeaveRequest->user->full_name,
+            'date'          => $this->HourlyLeaveRequest->date,
+            'start_time'    => $this->HourlyLeaveRequest->start_time,
+            'end_time'      => $this->HourlyLeaveRequest->end_time,
+            'reason'        => $this->HourlyLeaveRequest->reason,
             'message'       => 'Updated Hourly Leave Request '
         ];
+    }
+
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'employee'      => $this->HourlyLeaveRequest->user->full_name,
+            'date'          => $this->HourlyLeaveRequest->date,
+            'start_time'    => $this->HourlyLeaveRequest->start_time,
+            'end_time'      => $this->HourlyLeaveRequest->end_time,
+            'reason'        => $this->HourlyLeaveRequest->reason,
+            'message'       => 'Updated Hourly Leave Request'
+        ]);
     }
 }

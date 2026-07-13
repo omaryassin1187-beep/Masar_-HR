@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -40,10 +41,10 @@ class Setting extends Model
                 self::defaults()
             );
         }
-        
+
         return static::$instance;
     }
-    
+
     public static function defaults(): array
     {
         return [
@@ -57,6 +58,17 @@ class Setting extends Model
             'annual_leave_days'       => 14,
             'currency'                => 'SYP',
             'grace_period'            => 15,
+            'company_latitude'        =>33.5154600,
+            'company_longitude'       =>36.2788800,
+            'allowed_radius'          =>200
         ];
     }
+
+    public function workingHoursPerDay(): int
+{
+    $checkIn  = Carbon::parse($this->expected_check_in);  // "09:00:00"
+    $checkOut = Carbon::parse($this->expected_check_out); // "17:00:00"
+
+    return (int) $checkIn->diffInHours($checkOut); // 8
+}
 }

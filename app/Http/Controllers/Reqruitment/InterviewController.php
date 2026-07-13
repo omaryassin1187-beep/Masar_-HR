@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Reqruitment;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreInterviewRequest;
-use App\Http\Requests\SubmitRankingRequest;
-use App\Http\Requests\UpdateInterviewResultRequest;
-use App\Http\Resources\CandidateResource;
-use App\Http\Resources\InterviewResource;
+use App\Http\Requests\interview\StoreInterviewRequest;
+use App\Http\Requests\interview\SubmitRankingRequest;
+use App\Http\Requests\interview\UpdateInterviewResultRequest;
+use App\Http\Resources\candidate\CandidateResource;
+use App\Http\Resources\interview\InterviewResource;
 use App\Models\Interview;
 use App\Models\JobPosting;
 use App\Services\InterviewService;
@@ -21,7 +21,7 @@ class InterviewController extends Controller
 
     use AuthorizesRequests;
 
-    public function eligibleCandidates( JobPosting $jobPosting): AnonymousResourceCollection
+    public function eligibleCandidates(JobPosting $jobPosting): AnonymousResourceCollection
     {
         $this->authorize('viewEligibleCandidates', $jobPosting);
 
@@ -34,7 +34,7 @@ class InterviewController extends Controller
             ->with(['skills', 'jobPosting.requisition.skills']) // ← أضيفي هذه
 
             ->withCount([
-                'skills as matched_skills_count' => fn ($q) => $q->whereIn(
+                'skills as matched_skills_count' => fn($q) => $q->whereIn(
                     'skills.id',
                     $jobPosting->requisition->skills()->pluck('skills.id')
                 ),
@@ -82,6 +82,17 @@ class InterviewController extends Controller
             'data' => new InterviewResource($interview),
         ], 201);
     }
+    // Manager يستعرض مقابلاته المجدولة
+    public function myInterviews(): AnonymousResourceCollection
+    {
+        $interviews = Interview::where('interviewed_by', auth()->id())
+            ->where('status', 'scheduled')
+            ->with(['candidate'])
+            ->latest('scheduled_at')
+            ->get();
+
+        return InterviewResource::collection($interviews);
+    }
 
     public function updateResult(
         UpdateInterviewResultRequest $request,
@@ -96,11 +107,49 @@ class InterviewController extends Controller
             'data' => new InterviewResource($interview),
         ]);
     }
+    public function rankedByRate(JobPosting $jobPosting): AnonymousResourceCollection
+    {
+        $interviews = $jobPosting->interviews()
+            ->where('status', 'done')
+            ->with(['candidate'])
+            ->orderByDesc('rate')
+            ->get();
+
+        return InterviewResource::collection($interviews);
+    }
+    public function rejectCandidate(Interview $interview): JsonResponse
+{
+    $this->authorize('updateResult', $interview);
+
+    if ($interview->status === 'done') {
+        return response()->json([
+            'message' => 'Cannot reject a completed interview.'
+        ], 422);
+    }
+
+    if ($interview->status === 'cancelled') {
+        return response()->json([
+            'message' => 'Interview is already cancelled.'
+        ], 422);
+    }
+
+    $interview->update([
+        'status' => 'cancelled',
+        'notes' => 'Candidate rejected by manager',
+    ]);
+
+    $interview->candidate->update(['status' => 'rejected']);
+
+    return response()->json([
+        'message' => 'Candidate rejected successfully.'
+    ]);
+}
 
     public function submitRanking(
         SubmitRankingRequest $request,
         JobPosting $jobPosting
     ): JsonResponse {
+
         $this->authorize('submitRanking', $jobPosting);
 
         $this->service->submitRanking($jobPosting, $request->validated()['ranking']);

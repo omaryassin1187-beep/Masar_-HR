@@ -11,6 +11,14 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command(CreateDailyAttendanceRecords::class)->everyMinute();//dailyAt('10:05');
-//Schedule::command(DetermineAttendanceStatus::class)->everyMinute();
+Schedule::command(CreateDailyAttendanceRecords::class)->dailyAt('08:00');//everyMinute();
+Schedule::command(DetermineAttendanceStatus::class)->everyTenMinutes();//everyMinute();
+Schedule::command('offers:expire')->daily();
+Schedule::command('contracts:notify-expiring')->daily();
+Schedule::command('contracts:update-statuses')->daily();
+
+Schedule::command('candidates:daily-report')->dailyAt('17:00');
+
+Schedule::command('announcements:update-status')->everyTenMinutes();
+
 //Schedule::command(CreateAutoDeductions::class)->everyMinute();//dailyAt('17:05');

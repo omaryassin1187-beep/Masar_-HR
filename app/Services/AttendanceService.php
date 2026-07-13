@@ -33,60 +33,59 @@ class AttendanceService
     }
 
 
-    public function hasApprovedLeave(User $user,Carbon|string $date): bool
-    {
-
-       $date = Carbon::parse($date);
-
-       return LeaveRequest::query()
-           ->where('user_id', $user->id)
-           ->where('status', 'approved')
-           ->where('start_date', '<=', $date)
-           ->whereRaw(
-               'DATE_ADD(start_date, INTERVAL days_count - 1 DAY) >= ?',
-               [$date->toDateString()]
-           )
-           ->exists();
-    }
-
-
-    public function getAllowedCheckInTime(User $user,Carbon|string $date,$settings): Carbon
+    public function hasApprovedLeave(User $user, Carbon|string $date): bool
     {
 
         $date = Carbon::parse($date);
 
+        return LeaveRequest::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->where('start_date', '<=', $date)
+            ->whereRaw(
+                'DATE_ADD(start_date, INTERVAL days_count - 1 DAY) >= ?',
+                [$date->toDateString()]
+            )
+            ->exists();
+    }
+
+
+    public function getAllowedCheckInTime(User $user, Carbon|string $date, Setting $settings): Carbon
+    {
+        $date = Carbon::parse($date);
 
         $allowedTime = Carbon::parse(
             $date->format('Y-m-d') . ' ' . $settings->expected_check_in
         );
 
+        // نبحث فقط عن إجازة تبدأ مع بداية الدوام
         $hourlyLeave = HourlyLeaveEquest::query()
             ->where('user_id', $user->id)
             ->whereDate('date', $date)
             ->where('status', 'approved')
+            ->whereTime('start_time', $settings->expected_check_in)
             ->first();
 
         if ($hourlyLeave) {
 
-            $leaveEnd = Carbon::parse(
+            $allowedTime = Carbon::parse(
                 $date->format('Y-m-d') . ' ' . $hourlyLeave->end_time
             );
-
-            if ($leaveEnd->gt($allowedTime)) {
-                $allowedTime = $leaveEnd;
-            }
         }
 
-        return $allowedTime->addMinutes(
-            $settings->grace_period
-        );
+        return $allowedTime->addMinutes($settings->grace_period);
     }
 
 
-    public function calculateEarlyLeaveMinutes(Attendance $attendance,Carbon|string $date,Setting $settings): int 
-    {
+    public function calculateEarlyLeaveMinutes(
+        Attendance $attendance,
+        Carbon|string $date,
+        Setting $settings
+    ): int {
 
-        if (!$attendance->check_out) {
+        $lastCheckOut = $attendance->lastCheckOut();
+
+        if (!$lastCheckOut) {
             return 0;
         }
 
@@ -96,26 +95,22 @@ class AttendanceService
             $date->format('Y-m-d') . ' ' . $settings->expected_check_out
         );
 
+        // نبحث فقط عن إجازة تنتهي مع نهاية الدوام
         $hourlyLeave = HourlyLeaveEquest::query()
             ->where('user_id', $attendance->user_id)
             ->whereDate('date', $date)
             ->where('status', 'approved')
+            ->whereTime('end_time', $settings->expected_check_out)
             ->first();
 
         if ($hourlyLeave) {
 
-            $leaveStart = Carbon::parse(
+            $expectedCheckOut = Carbon::parse(
                 $date->format('Y-m-d') . ' ' . $hourlyLeave->start_time
             );
-
-            if ($leaveStart->lt($expectedCheckOut)) {
-                $expectedCheckOut = $leaveStart;
-            }
         }
 
-        $checkOut = Carbon::parse(
-            $date->format('Y-m-d') . ' ' . $attendance->check_out
-        );
+        $checkOut = Carbon::parse($lastCheckOut);
 
         if ($checkOut->gte($expectedCheckOut)) {
             return 0;
@@ -125,7 +120,7 @@ class AttendanceService
     }
 
 
-    public function resolveAttendance(Attendance $attendance,Setting $settings): array
+    public function resolveAttendance(Attendance $attendance, Setting $settings): array
     {
         $date = Carbon::parse($attendance->date);
 
@@ -137,7 +132,10 @@ class AttendanceService
             ];
         }
 
-        if (!$attendance->check_in) {
+        $firstCheckIn = $attendance->firstCheckIn();
+
+        if (!$firstCheckIn) {
+
             return [
                 'status' => 'absent',
                 'late_minutes' => 0,
@@ -147,12 +145,11 @@ class AttendanceService
 
         $allowedCheckIn = $this->getAllowedCheckInTime(
             $attendance->user,
-            $date,$settings
+            $date,
+            $settings
         );
 
-        $checkIn = Carbon::parse(
-            $date->format('Y-m-d') . ' ' . $attendance->check_in
-        );
+        $checkIn = Carbon::parse($firstCheckIn);
 
         $lateMinutes = 0;
         $status = 'present';
@@ -170,11 +167,54 @@ class AttendanceService
             'early_leave_minutes' => $this->calculateEarlyLeaveMinutes(
                 $attendance,
                 $date,
-                 $settings
+                $settings
             ),
         ];
     }
 
+    public function isInsideCompany(
+        float $userLatitude,
+        float $userLongitude
+    ): bool {
+
+        $settings = Setting::firstOrFail();
+       // dd($settings);
+        $distance = $this->calculateDistance(
+            $userLatitude,
+            $userLongitude,
+            $settings->company_latitude,
+            $settings->company_longitude
+        );
+
+        return $distance <= $settings->allowed_radius;
+    }
+
+    /**
+     * حساب المسافة بين نقطتين باستخدام معادلة Haversine.
+     *
+     * @return float المسافة بالمتر
+     */
+    private function calculateDistance(
+        float $lat1,
+        float $lon1,
+        float $lat2,
+        float $lon2
+    ): float {
+
+        $earthRadius = 6371000; // بالمتر
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a =
+            sin($dLat / 2) * sin($dLat / 2) +
+            cos(deg2rad($lat1)) *
+            cos(deg2rad($lat2)) *
+            sin($dLon / 2) *
+            sin($dLon / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
+    }
 }
-
-

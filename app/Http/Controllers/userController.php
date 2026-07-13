@@ -11,30 +11,30 @@ use App\Http\Resources\UserResource;
 
 class userController extends Controller
 {
-    public function putUserPassword(Request $request)
-    {
-        $validatedData = $request->validate([
-            'password' => 'required|min:8|confirmed|string',
-        ]);
-        $email = 'omar12@gmail.com';    //ايميل المتقدم ,نستطيع الوصول اليه من خلال العلاقات
-        $user = User::where('email', $email)->first();
+public function putUserPassword(Request $request)
+{
+    $request->validate([
+        'email'    => ['required', 'email', 'exists:users,email'],
+        'password' => ['required', 'min:8', 'confirmed'],
+    ]);
 
-        if (! $user) {
-            return response()->json([
-                'message' => 'User not found.',
-                'status_code' => 404,
-            ], 404);
-        }
-        $user->password = Hash::make($request->password);
-        // $user->status='active';
-        $user->save();
+    $user = User::where('email', $request->email)->first();
 
+    if ($user->is_first_login === false || $user->password !== null) {
         return response()->json([
-            'message' => 'Password put successfully.',
-            'status_code' => 200,
-        ], 200);
+            'message' => 'Security alert: Password has already been configured for this account.'
+        ], 422);
     }
 
+    $user->update([
+        'password'       => Hash::make($request->password),
+        'is_first_login' => false,
+    ]);
+
+    return response()->json([
+        'message' => 'Password set successfully.',
+    ], 200);
+}
     public function login(Request $request)
     {
         $request->validate([
@@ -104,6 +104,8 @@ class userController extends Controller
 
         $employees = User::role('employee')
             ->where('dep_id', $manager->dep_id)
+            ->with('profile')
+
             ->get();
 
         return UserResource::collection($employees);
@@ -151,40 +153,94 @@ class userController extends Controller
         ], 200);
     }
 
-    public function searchManagerEmployees(Request $request)
-    {
-        $search = trim($request->search);
+    public function searchEmployees(Request $request)
+{
+    $search = trim($request->search);
 
-        $manager = auth()->user();
+    $user = auth()->user();
 
-        $employees = User::role('employee')
-            ->where('dep_id', $manager->dep_id)
-            ->where('full_name', 'like', "%{$search}%")
-            ->get();
+    $query = User::role('employee');
 
-        // إذا لم يجد نتائج مطابقة
-        if ($employees->isEmpty()) {
-
-            $employees = User::role('employee')
-                ->where('dep_id', $manager->dep_id)
-                ->get()
-                ->map(function ($employee) use ($search) {
-
-                    similar_text(
-                        strtolower($search),
-                        strtolower($employee->full_name),
-                        $percent
-                    );
-
-                    $employee->similarity = $percent;
-
-                    return $employee;
-                })
-                ->sortByDesc('similarity')
-                ->take(5)
-                ->values();
-        }
-
-        return response()->json($employees);
+    // المدير يرى موظفي قسمه فقط
+    if ($user->hasRole('manager')) {
+        $query->where('dep_id', $user->dep_id);
     }
+
+    // Admin و HR يرون جميع الموظفين
+
+    $employees = (clone $query)
+        ->where('full_name', 'like', "%{$search}%")
+        ->get();
+
+    // إذا لم يجد نتائج مطابقة
+    if ($employees->isEmpty()) {
+
+        $employees = $query
+            ->get()
+            ->map(function ($employee) use ($search) {
+
+                similar_text(
+                    mb_strtolower($search),
+                    mb_strtolower($employee->full_name),
+                    $percent
+                );
+
+                $employee->similarity = $percent;
+
+                return $employee;
+            })
+            ->sortByDesc('similarity')
+            ->take(5)
+            ->values();
+    }
+
+    return response()->json($employees);
+}
+
+    public function changePassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'password' => ['required', 'min:8', 'confirmed'],
+        ]);
+
+        $user = auth()->user();
+        $user->update([
+            'password'       => Hash::make($request->password),
+            'is_first_login' => false,
+        ]);
+
+        return response()->json([
+            'message' => 'Password changed successfully.',
+        ]);
+    }
+   
+
+//لجلب موظفين + مدير القسم حسب القسم الحالي للمستخدم
+public function getDepartmentUsers(): JsonResponse
+{
+    $user = auth()->user();
+
+    $users = User::where('dep_id', $user->dep_id)
+        ->where('id', '!=', $user->id)
+        ->select('id', 'full_name', 'email', 'dep_id')
+        ->with('roles')
+        ->get()
+        ->map(function ($user) {
+            return [
+                'id' => $user->id,
+                'full_name' => $user->full_name,
+                'email' => $user->email,
+                'role' => $user->roles->first()?->name ?? 'employee',
+                'is_manager' => $user->hasRole('manager'),
+            ];
+        });
+
+    $sorted = $users->sortByDesc('is_manager')->values();
+
+    return response()->json([
+        'success' => true,
+        'data' => $sorted,
+    ]);
+}
+   
 }

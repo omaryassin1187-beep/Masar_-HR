@@ -3,19 +3,28 @@
 namespace App\Http\Controllers\Reqruitment;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ApproveJobRequisitionRequest;
-use App\Http\Requests\IndexJobRequisitionRequest;
-use App\Http\Requests\StoreJobRequisitionRequest;
-use App\Http\Requests\UpdateJobRequisitionRequest;
-use App\Http\Resources\JobPostingResource;
-use App\Http\Resources\JobRequisitionDetailResource;
-use App\Http\Resources\JobRequisitionlistResource;
+use App\Http\Requests\job_requestion\ApproveJobRequisitionRequest;
+use App\Http\Requests\job_requestion\IndexJobRequisitionRequest;
+use App\Http\Requests\job_requestion\StoreJobRequisitionRequest;
+use App\Http\Requests\job_requestion\UpdateJobRequisitionRequest;
+use App\Http\Resources\job_posting\JobPostingResource;
+use App\Http\Resources\job_requestion\JobRequisitionDetailResource;
+use App\Http\Resources\job_requestion\JobRequisitionlistResource;
+use App\Http\Resources\job_requestion\StoreJobRequisitionResource;
 use App\Models\JobRequisition;
+use App\Models\User;
+use App\Notifications\job_requestion\JobRequisitionApprovedNotification;
+use App\Notifications\job_requestion\JobRequisitionDeletedNotification;
+use App\Notifications\job_requestion\JobRequisitionRejectedNotification;
+use App\Notifications\job_requestion\JobRequisitionUpdatedNotification;
+use App\Notifications\job_requestion\NewJobRequisitionNotification;
 use App\Services\JobRequisitionService;
 use Exception;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class JobRequisitionController extends Controller
 {
@@ -30,6 +39,7 @@ class JobRequisitionController extends Controller
      */
     public function index(IndexJobRequisitionRequest $request): JsonResponse
     {
+
         $this->authorize('viewAny', JobRequisition::class);
         $user = $request->user();
 
@@ -45,7 +55,7 @@ class JobRequisitionController extends Controller
             )
 
             ->when(
-                $request->filled('department_id') && $user->hasAnyRole(['admin', 'hr']),
+                $request->filled('department_id') && $user->hasAnyRole(['admin', 'HR']),
                 fn($q) => $q->where('department_id', $request->department_id)
             )
 
@@ -59,6 +69,7 @@ class JobRequisitionController extends Controller
             )
             ->with(['skills', 'department', 'requestedBy'])
             ->latest()
+
             ->paginate($request->integer('per_page', 15));
 
         return response()->json([
@@ -88,9 +99,21 @@ class JobRequisitionController extends Controller
 
             $requisition->skills()->attach($request->skills);
 
+
+            $hrUsers = User::role('HR')->get();
+            Log::info('HR Users count: ' . $hrUsers->count());
+
+
+            if ($hrUsers->count() > 0) {
+                Notification::send($hrUsers, new NewJobRequisitionNotification($requisition));
+                Log::info('Notification sent successfully.');
+            } else {
+                Log::info('No HR users found.');
+            }
+
             return response()->json([
                 'message' => 'Job requisition submitted successfully',
-                'data' => new JobRequisitionlistResource($requisition->load('skills', 'requestedBy', 'department')),
+                'data' => new StoreJobRequisitionResource($requisition->load('skills', 'requestedBy', 'department')),
             ], 201);
         });
     }
@@ -98,6 +121,12 @@ class JobRequisitionController extends Controller
     public function update(UpdateJobRequisitionRequest $request, JobRequisition $jobRequisition): JsonResponse
     {
         $this->authorize('update', $jobRequisition);
+
+        if ($jobRequisition->status === 'approved') {
+            return response()->json([
+                'message' => 'Cannot update this requisition. It has already been approved and converted to a job posting.',
+            ], 422);
+        }
 
         try {
             // Atomicity (إما كل العمليات تنجح أو كلها تتراجع)
@@ -113,6 +142,11 @@ class JobRequisitionController extends Controller
             });
 
             $jobRequisition->load(['skills', 'department', 'requestedBy']);
+
+            $hrUsers = User::role('HR')->get();
+            Notification::send($hrUsers, new JobRequisitionUpdatedNotification(
+                $jobRequisition->fresh()->load(['skills', 'department', 'requestedBy'])
+            ));
 
             return response()->json([
                 'message' => 'Job requisition updated successfully.',
@@ -131,8 +165,23 @@ class JobRequisitionController extends Controller
     {
         $this->authorize('delete', $jobRequisition);
 
+        if ($jobRequisition->status !== 'pending') {
+            return response()->json([
+                'message' => 'Only pending job requisitions can be deleted. Current status: ' . $jobRequisition->status,
+            ], 403);
+        }
+
+        $requisitionData = $jobRequisition->fresh()->load(['requestedBy', 'department']);
+        $deletedBy = auth()->user()->full_name;
+
         $jobRequisition->skills()->sync([]);
         $jobRequisition->delete();
+
+        // ✅ إشعار لـ HR
+        $hrUsers = User::role('HR')->get();
+        Notification::send($hrUsers, new JobRequisitionDeletedNotification($requisitionData, $deletedBy));
+
+
 
         return response()->json([
             'message' => 'Job requisition deleted successfully.',
@@ -164,6 +213,18 @@ class JobRequisitionController extends Controller
         ApproveJobRequisitionRequest $request,
         JobRequisition $jobRequisition
     ): JsonResponse {
+
+        if ($jobRequisition->status === 'rejected') {
+            return response()->json([
+                'message' => 'Cannot approve a rejected requisition.',
+            ], 422);
+        }
+
+        if ($jobRequisition->status === 'approved') {
+            return response()->json([
+                'message' => 'This requisition is already approved.',
+            ], 422);
+        }
         $this->authorize('approve', $jobRequisition);
 
 
@@ -173,6 +234,10 @@ class JobRequisitionController extends Controller
             description: $request->description ?? $jobRequisition->description,
         );
 
+
+        // ✅ إشعار الموافقة
+        $hrUsers = User::role('HR')->get();
+        Notification::send($hrUsers, new JobRequisitionApprovedNotification($jobRequisition, $result['posting']));
         return response()->json([
             'message' => 'Job requisition approved and posting created successfully.',
             'data' => [
@@ -184,9 +249,26 @@ class JobRequisitionController extends Controller
 
     public function reject(JobRequisition $jobRequisition): JsonResponse
     {
+        if ($jobRequisition->status === 'approved') {
+            return response()->json([
+                'message' => 'Cannot reject an approved requisition.',
+            ], 422);
+        }
+
+        if ($jobRequisition->status === 'rejected') {
+            return response()->json([
+                'message' => 'This requisition is already rejected.',
+            ], 422);
+        }
         $this->authorize('reject', $jobRequisition);
 
+
         $requisition = $this->requisitionService->reject($jobRequisition);
+
+
+    // ✅ إشعار الرفض
+    $hrUsers = User::role('HR')->get();
+    Notification::send($hrUsers, new JobRequisitionRejectedNotification($jobRequisition));
 
         return response()->json([
             'message' => 'Job requisition rejected successfully.',
