@@ -13,7 +13,8 @@ return new class extends Migration
 
             $table->foreignId('evaluation_id')
                 ->constrained('performance_evaluations')
-                ->cascadeOnDelete(); // ابن-تابع لسجل التقييم نفسه، مش للمستخدم — الحذف هون آمن
+                ->cascadeOnDelete();
+                //
 
             $table->unsignedSmallInteger('working_days_count')->default(0);
             $table->decimal('attendance_rate', 5, 2)->default(0);
