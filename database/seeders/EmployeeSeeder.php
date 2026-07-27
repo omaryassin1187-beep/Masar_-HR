@@ -43,7 +43,92 @@ class EmployeeSeeder extends Seeder
             ],
 
         ]);
-        
+
+        $employeeMarketing = User::create([
+            'full_name' => 'employeeMarketing',
+            'email' => 'employee33@gmail.com',
+            'dep_id' => 3,
+            'password' => Hash::make('11111111'),
+        ]);
+        $employeeMarketing->assignRole('employee');
+        $employeeMarketing->leaveBalance()->createMany([
+
+            [
+                'leave_type' => 'annual',
+                'used_days' => 0,
+                'total_days' => 14,
+            ],
+
+            [
+                'leave_type' => 'sick',
+                'used_days' => 0,
+                'total_days' => 10
+            ],
+
+            [
+                'leave_type' => 'unpaid',
+                'used_days' => 0,
+                'total_days' => null
+            ],
+
+        ]);
+
+        $employeeMarketing = User::create([
+            'full_name' => 'employeeMarketing',
+            'email' => 'employee36@gmail.com',
+            'dep_id' => 3,
+            'password' => Hash::make('11111111'),
+        ]);
+        $employeeMarketing->assignRole('employee');
+        $employeeMarketing->leaveBalance()->createMany([
+
+            [
+                'leave_type' => 'annual',
+                'used_days' => 0,
+                'total_days' => 14,
+            ],
+
+            [
+                'leave_type' => 'sick',
+                'used_days' => 0,
+                'total_days' => 10
+            ],
+
+            [
+                'leave_type' => 'unpaid',
+                'used_days' => 0,
+                'total_days' => null
+            ],
+
+        ]); $employeeMarketing = User::create([
+            'full_name' => 'employeeMarketing',
+            'email' => 'employee3@gmail.com',
+            'dep_id' => 3,
+            'password' => Hash::make('11111111'),
+        ]);
+        $employeeMarketing->assignRole('employee');
+        $employeeMarketing->leaveBalance()->createMany([
+
+            [
+                'leave_type' => 'annual',
+                'used_days' => 0,
+                'total_days' => 14,
+            ],
+
+            [
+                'leave_type' => 'sick',
+                'used_days' => 0,
+                'total_days' => 10
+            ],
+
+            [
+                'leave_type' => 'unpaid',
+                'used_days' => 0,
+                'total_days' => null
+            ],
+
+        ]);
+
         $employeeBack = User::create([
             'full_name' => 'employeeBack',
             'email' => 'employee4@gmail.com',
@@ -77,6 +162,36 @@ class EmployeeSeeder extends Seeder
         $employeeFront = User::create([
             'full_name' => 'employeeFront',
             'email' => 'employee5@gmail.com',
+            'dep_id' => 5,
+            'password' => Hash::make('11111111'),
+
+        ]);
+        $employeeFront->assignRole('employee');
+        $employeeFront->leaveBalance()->createMany([
+
+            [
+                'leave_type' => 'annual',
+                'used_days' => 0,
+                'total_days' => 14,
+            ],
+
+            [
+                'leave_type' => 'sick',
+                'used_days' => 0,
+                'total_days' => 10
+            ],
+
+            [
+                'leave_type' => 'unpaid',
+                'used_days' => 0,
+                'total_days' => null
+            ],
+
+        ]);
+
+          $employeeFront = User::create([
+            'full_name' => 'employeeFront',
+            'email' => 'employee55@gmail.com',
             'dep_id' => 5,
             'password' => Hash::make('11111111'),
 
