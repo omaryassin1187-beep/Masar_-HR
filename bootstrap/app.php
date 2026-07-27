@@ -8,16 +8,17 @@ use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
-        channels: __DIR__.'/../routes/channels.php',
+        web: __DIR__ . '/../routes/web.php',
+        api: __DIR__ . '/../routes/api.php',
+        commands: __DIR__ . '/../routes/console.php',
+        channels: __DIR__ . '/../routes/channels.php',
         health: '/up',
     )
 
@@ -26,7 +27,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
 
     ->withMiddleware(function (Middleware $middleware) {
-        // ✅ دمج جميع الـ الـ aliases في مكان واحد لمنع التكرار وتشتت الذاكرة
         $middleware->alias([
             'role'                    => RoleMiddleware::class,
             'permission'              => PermissionMiddleware::class,
@@ -38,33 +38,26 @@ return Application::configure(basePath: dirname(__DIR__))
 
     ->withExceptions(function (Exceptions $exceptions): void {
 
-        // 1️⃣ معالجة خطأ 404 بالتفصيل (من ملف صديقك)
-        $exceptions->render(function (NotFoundHttpException $e, $request) {
-            // إذا كان سبب الـ 404 هو فشل الـ Route Model Binding
-            if ($e->getPrevious() instanceof ModelNotFoundException) {
+        // 1️⃣ معالجة خطأ 404
+        $exceptions->renderable(function (NotFoundHttpException $e, $request) {
+            if ($request->expectsJson()) {
+                if ($e->getPrevious() instanceof ModelNotFoundException) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Model Not Found',
+                    ], 404);
+                }
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Model Not Found',
+                    'message' => 'Route Not Found',
                 ], 404);
             }
-
-            // إذا كان الرابط غير موجود أساساً في الـ Routes
-            return response()->json([
-                'success' => false,
-                'message' => 'Route Not Found',
-            ], 404);
         });
 
-        // 2️⃣ معالجة أخطاء الصلاحيات والـ 403 (من ملفك)
-        $exceptions->render(function (AuthorizationException $e, $request) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage() ?: 'This action is unauthorized.',
-            ], 403);
-        });
-
-        $exceptions->render(function (HttpException $e, $request) {
-            if ($e->getStatusCode() === 403) {
+        // 2️⃣ معالجة أخطاء الصلاحيات 403
+        $exceptions->renderable(function (AuthorizationException $e, $request) {
+            if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => $e->getMessage() ?: 'This action is unauthorized.',
@@ -72,18 +65,55 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        // 3️⃣ شبكة الأمان الخلفية (Fallback) لجميع الأخطاء الأخرى غير المتوقعة (مثل 500)
+        // 3️⃣ معالجة أخطاء HTTP العامة
+        $exceptions->renderable(function (HttpException $e, $request) {
+            if ($request->expectsJson()) {
+                $statusCode = $e->getStatusCode();
+                
+                if ($statusCode === 403) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $e->getMessage() ?: 'This action is unauthorized.',
+                    ], 403);
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage() ?: 'HTTP Error Occurred',
+                ], $statusCode);
+            }
+        });
+
+        // ✅ 4️⃣ معالجة أخطاء المصادقة (Authentication) - توكن غير صحيح
+        $exceptions->renderable(function (AuthenticationException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated.',
+                ], 401); // ✅ 401 Unauthorized
+            }
+        });
+
+        // 5️⃣ شبكة الأمان الخلفية (Fallback) لجميع الأخطاء الأخرى
         $exceptions->render(function (Throwable $e, $request) {
+            if ($request->expectsJson()) {
+                $statusCode = 500;
 
-            // تحقق ذكي من الـ Status Code؛ إذا لم يكن خطأ HTTP نعتبره 500
-            $statusCode = method_exists($e, 'getStatusCode')
-                ? $e->getStatusCode()
-                : (method_exists($e, 'getCode') && $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500);
+                if (method_exists($e, 'getStatusCode')) {
+                    $statusCode = $e->getStatusCode();
+                } elseif (is_numeric($e->getCode()) && $e->getCode() >= 400 && $e->getCode() < 600) {
+                    $statusCode = (int) $e->getCode();
+                }
 
-            return response()->json([
-                'success' => false,
-                'message' => config('app.debug') ? $e->getMessage() : 'Something Went Wrong',
-            ], $statusCode);
+                $response = [
+                    'success' => false,
+                    'message' => config('app.debug') ? $e->getMessage() : 'Something Went Wrong',
+                ];
+
+                
+
+                return response()->json($response, $statusCode);
+            }
         });
     })
     ->create();

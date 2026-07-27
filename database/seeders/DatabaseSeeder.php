@@ -14,12 +14,12 @@ class DatabaseSeeder extends Seeder
     {
 
         $this->call([
+            SettingSeeder::class,
             RoleSeeder::class,
             DepartmentSeeder::class,
             AdminSeeder::class,
             HrSeeder::class,
             ManagerSeeder::class,
-            SettingSeeder::class,
             SkillSeeder::class,
             EmployeeSeeder::class,
             HolidaySeeder::class,

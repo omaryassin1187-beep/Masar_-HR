@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Setting;
 
 class ManagerSeeder extends Seeder
 {
@@ -13,6 +14,7 @@ class ManagerSeeder extends Seeder
      */
     public function run(): void
     {
+
         $marketingManager = User::create([
             'full_name' => 'ahmadMarketing',
             'email' => 'omar13@gmail.com',
@@ -21,24 +23,24 @@ class ManagerSeeder extends Seeder
 
         ]);
         $marketingManager->assignRole('manager');
-         $marketingManager->leaveBalance()->createMany([
+        $marketingManager->leaveBalance()->createMany([
 
             [
                 'leave_type' => 'annual',
                 'used_days' => 0,
-                'total_days'=>30,
+                'total_days' => 30,
             ],
 
             [
                 'leave_type' => 'sick',
-                 'used_days' => 0,
-                'total_days'=>15
+                'used_days' => 0,
+                'total_days' => 15
             ],
 
             [
                 'leave_type' => 'unpaid',
                 'used_days' => 0,
-                'total_days'=>null
+                'total_days' => null
             ],
 
         ]);
@@ -54,25 +56,25 @@ class ManagerSeeder extends Seeder
         $backendManager->assignRole('manager');
         $backendManager->leaveBalance()->createMany([
 
-                    [
-                        'leave_type' => 'annual',
-                        'used_days' => 0,
-                        'total_days'=>30,
-                    ],
+            [
+                'leave_type' => 'annual',
+                'used_days' => 0,
+                'total_days' => 30,
+            ],
 
-                    [
-                        'leave_type' => 'sick',
-                        'used_days' => 0,
-                        'total_days'=>15
-                    ],
+            [
+                'leave_type' => 'sick',
+                'used_days' => 0,
+                'total_days' => 15
+            ],
 
-                    [
-                        'leave_type' => 'unpaid',
-                        'used_days' => 0,
-                        'total_days'=>null
-                    ],
+            [
+                'leave_type' => 'unpaid',
+                'used_days' => 0,
+                'total_days' => null
+            ],
 
-                ]);
+        ]);
 
 
         $frontendManager = User::create([
@@ -84,24 +86,35 @@ class ManagerSeeder extends Seeder
         $frontendManager->assignRole('manager');
         $frontendManager->leaveBalance()->createMany([
 
-                    [
-                        'leave_type' => 'annual',
-                        'used_days' => 0,
-                        'total_days'=>30,
-                    ],
+            [
+                'leave_type' => 'annual',
+                'used_days' => 0,
+                'total_days' => 30,
+            ],
 
-                    [
-                        'leave_type' => 'sick',
-                        'used_days' => 0,
-                        'total_days'=>15
-                    ],
+            [
+                'leave_type' => 'sick',
+                'used_days' => 0,
+                'total_days' => 15
+            ],
 
-                    [
-                        'leave_type' => 'unpaid',
-                        'used_days' => 0,
-                        'total_days'=>null
-                    ],
+            [
+                'leave_type' => 'unpaid',
+                'used_days' => 0,
+                'total_days' => null
+            ],
 
-                ]);
+        ]);
+
+        $currency = Setting::value('currency');
+        $salaryData = [
+            'hour_price' => 3000,
+            'currency' => $currency,
+            'effective_from' => '2025-06-01',
+        ];
+
+        $marketingManager->employeeSalaries()->create($salaryData);
+        $backendManager->employeeSalaries()->create($salaryData);
+        $frontendManager->employeeSalaries()->create($salaryData);
     }
 }

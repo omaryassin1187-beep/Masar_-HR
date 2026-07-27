@@ -26,21 +26,30 @@ class CreateDailyAttendanceRecords extends Command
     /**
      * Execute the console command.
      */
-        public function handle(AttendanceService $attendanceService): void
+    public function handle(AttendanceService $attendanceService): void
     {
         $today = now()->toDateString();
 
-        if (! $attendanceService->isWorkingDay($today)) {
-            return;
+        if ($attendanceService->isWorkingDay($today)) {
+
+            $users = User::where('status', 'active');
+        } else {
+
+            $users = User::where('status', 'active')
+                ->whereHas('overTimes', function ($q) use ($today) {
+
+                    $q->whereDate('date', $today)
+                        ->where('status', 'approved');
+                });
         }
 
-        User::where('status', 'active')
-            ->select('id')
+        $users->select('id')
             ->chunkById(500, function ($users) use ($today) {
 
                 $rows = [];
 
                 foreach ($users as $user) {
+
                     $rows[] = [
                         'user_id' => $user->id,
                         'date' => $today,

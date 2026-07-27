@@ -70,32 +70,38 @@ class ContractRenewalService
     private function handleAcceptance(ContractRenewal $renewal): void
     {
         $renewal->update([
-            'status'                => ContractRenewal::STATUS_ACCEPTED,
-            'employee_response_at'  => now(),
+            'status'               => ContractRenewal::STATUS_ACCEPTED,
+            'employee_response_at' => now(),
         ]);
 
         $settings = Setting::instance();
         $oldContract = $renewal->contract;
-        Contract::create([
-            'user_id'                  => $renewal->user_id,
-            'offer_id'                 => $oldContract->offer_id,
-            'hour_price'               => $renewal->new_hour_price,
-            'working_hours_per_day'    => $renewal->new_working_hours_per_day,
-            'weekend_days'             => $renewal->new_weekend_days,
-            'start_date'               => $renewal->new_start_date,
-            'end_date'                 => $renewal->new_end_date,
-            'probation_period_days'    => 0,
-            'termination_notice_days'  => $settings->termination_notice_days,
-            'jurisdiction'             => $settings->jurisdiction,
-            'signed_at'                => today(),
-            'status'                   => Contract::STATUS_ACTIVE, // ✅ دائمًا active
+
+        $newContract = Contract::create([
+            'user_id'                 => $renewal->user_id,
+            'offer_id'                => $oldContract->offer_id,
+            'hour_price'              => $renewal->new_hour_price,
+            'working_hours_per_day'   => $renewal->new_working_hours_per_day,
+            'weekend_days'            => $renewal->new_weekend_days,
+            'start_date'              => $renewal->new_start_date,
+            'end_date'                => $renewal->new_end_date,
+            'probation_period_days'   => 0,
+            'termination_notice_days' => $settings->termination_notice_days,
+            'jurisdiction'            => $settings->jurisdiction,
+            'signed_at'               => today(),
+            'status'                  => Contract::STATUS_ACTIVE,
 
             'candidate_signature_path' => $oldContract->candidate_signature_path,
             'candidate_signed_at'      => $oldContract->candidate_signed_at,
             'hr_signature_path'        => $oldContract->hr_signature_path,
             'hr_signed_at'             => $oldContract->hr_signed_at,
+        ]);
 
-
+        $newContract->user->employeeSalaries()->create([
+            'hour_price'     => $newContract->hour_price,
+            'currency'       => $settings->currency,
+            'effective_from' => $newContract->start_date,
+            'effective_to'   => $newContract->end_date,
         ]);
 
         User::role('HR')->each(function ($hr) use ($renewal) {

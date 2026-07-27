@@ -9,6 +9,7 @@ use App\Models\Attendance_Leaves\Attendance_session;
 class Attendance extends Model
 {
    protected $guarded = [];
+   protected $casts = ['date' => 'date',];
 
    public function user()
    {
@@ -48,5 +49,11 @@ class Attendance extends Model
          ->whereNotNull('check_out')
          ->orderByDesc('check_out')
          ->value('check_out');
+   }
+
+   public function latestSession()
+   {
+      return $this->hasOne(Attendance_session::class)
+         ->latestOfMany();
    }
 }

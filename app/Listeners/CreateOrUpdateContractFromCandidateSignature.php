@@ -56,7 +56,7 @@ class CreateOrUpdateContractFromCandidateSignature
             $settings  = Setting::instance();
             $startDate = $offer->start_date;
 
-            return Contract::create([
+            $contract =  Contract::create([
                 'user_id'                  => $user->id,
                 'offer_id'                 => $offer->id,
                 'hour_price'               => $offer->hour_price,
@@ -71,7 +71,20 @@ class CreateOrUpdateContractFromCandidateSignature
                 'candidate_signed_at'      => now(),
                 'status'                   => Contract::STATUS_AWAITING_HR_SIGNATURE,
             ]);
+
+            $user->employeeSalaries()
+                ->firstOrCreate(
+                    ['effective_from' => $contract->start_date],
+                    [
+                        'hour_price' => $contract->hour_price,
+                        'currency'   => $settings->currency,
+                        'effective_to'   => $contract->end_date,
+                    ]
+                );
+
+            return $contract;
         });
+
         // ✅ الإشعارات بعد التزام الـ transaction، وبمعزل عنها
         $hrUsers = User::role('HR')->get();
 

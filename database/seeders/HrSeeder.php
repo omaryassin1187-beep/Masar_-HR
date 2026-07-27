@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -44,5 +45,15 @@ class HrSeeder extends Seeder
             ],
 
         ]);
+
+        $currency = Setting::value('currency');
+        $salaryData = [
+            'hour_price' => 4000,
+            'currency' => $currency,
+            'effective_from' => '2025-06-01',
+        ];
+
+        $HR->employeeSalaries()->create($salaryData);
+       
     }
 }

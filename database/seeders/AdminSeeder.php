@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Seeder;
@@ -17,7 +18,7 @@ class AdminSeeder extends Seeder
             'full_name' => 'ceo',
             'email' => 'omar12@gmail.com',
             'dep_id' => 1,
-'password' => Hash::make('11111111'),
+            'password' => Hash::make('11111111'),
         ]);
         $admin->assignRole('admin');
         $admin->leaveBalance()->createMany([
@@ -41,5 +42,13 @@ class AdminSeeder extends Seeder
             ],
 
         ]);
+        $currency = Setting::value('currency');
+        $salaryData = [
+            'hour_price' => 4000,
+            'currency' => $currency,
+            'effective_from' => '2025-06-01',
+        ];
+
+        $admin->employeeSalaries()->create($salaryData);
     }
 }

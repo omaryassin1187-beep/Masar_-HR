@@ -9,6 +9,7 @@ use App\Http\Controllers\Attendance_Leaves\LeaveRequestController;
 use App\Http\Controllers\Attendance_Leaves\HourlyLeaveRequestController;
 use App\Http\Controllers\Attendance_Leaves\AttendanceController;
 use App\Http\Controllers\ContractRenewalController;
+use App\Http\Controllers\Salary\DeductionController;
 use App\Http\Controllers\Reqruitment\ContractSignatureController;
 use App\Http\Controllers\Reqruitment\JobRequisitionController;
 use App\Http\Controllers\Reqruitment\OfferController;
@@ -21,6 +22,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Reqruitment\ContractController;
 use App\Http\Controllers\Reqruitment\OnboardingController;
+use App\Http\Controllers\Salary\EmployeeSalariesController;
+use App\Http\Controllers\Salary\OverTimeController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\Task\TaskController;
 use App\Http\Controllers\Task\TaskReviewController;
@@ -78,8 +81,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('check-out', [AttendanceController::class, 'checkOut']);
     Route::get('my-monthly-attendance', [AttendanceController::class, 'getMyMonthlyAttendances']);
 
+    
+    Route::get('my-base-salaries', [EmployeeSalariesController::class, 'myBaseSalaries']);
 
-
+    Route::get('my-deductions', [DeductionController::class, 'myDeduction']); 
 
     Route::get('/announcements/active', [AnnouncementController::class, 'announcementsActive']);
     Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show']);
@@ -93,6 +98,11 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware(['signed']);
 
     Route::get('/complaints/{complaint}', [ComplaintController::class, 'show']);
+
+    Route::get('overtimes/{id}', [OverTimeController::class, 'show']);
+    Route::post('store-overtime-byemployee', [OverTimeController::class, 'storeByEmployee']);
+    Route::get('my-overtimes', [OverTimeController::class, 'myOverTimes']);
+    Route::delete('delete-overtime/{id}/request', [OverTimeController::class, 'destroy']);
 
 
 
@@ -126,6 +136,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/tasks/{task}/cancel', [TaskController::class, 'cancel']);
 
         Route::post('/task-submissions/{submission}/review', [TaskReviewController::class, 'store']);
+        Route::post('store-overtime-bymanager', [OverTimeController::class, 'storeByManager']);
+        Route::get('my-created-overtime-manager', [OverTimeController::class, 'getMyCreatedOverTimeRequests']);
+        Route::get('my-department-overtime', [OverTimeController::class, 'getMyDepartmentEmployeeOverTimeRequests']);
+        Route::put('voluntary-overtime/{id}/approve', [OverTimeController::class, 'approveByManager']);
+        Route::put('voluntary-overtime/{id}/reject', [OverTimeController::class, 'rejectByManager']);
+
     });
 
 
@@ -179,6 +195,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/complaints', [ComplaintController::class, 'index']);
         Route::patch('/complaints/{complaint}/mark-under-review', [ComplaintController::class, 'markUnderReview']);
         Route::post('/complaints/{complaint}/respond', [ComplaintController::class, 'respond']);
+
+        Route::post('increase/{id}/employee-hour-price', [EmployeeSalariesController::class, 'increaseHourlyRate']);
+         
+        Route::post('deductions', [DeductionController::class, 'store']); 
+
+        Route::put('mandatory-overtime/{id}/reject', [OverTimeController::class, 'rejectByHr']);
+        Route::put('mandatory-overtime/{id}/approve', [OverTimeController::class, 'approveByHr']);
+        Route::get('mandatory-overtime', [OverTimeController::class, 'managerRequests']);
+        Route::get('voluntary-overtime', [OverTimeController::class, 'getAllEmployeeOverTimeRequests']);
+
     });
 
 
@@ -253,6 +279,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/announcements/{announcement}/publish', [AnnouncementController::class, 'publish']);
 
         Route::get('search-employees', [userController::class, 'searchEmployees']);
+        Route::get('base/{id}/employee-salaries', [EmployeeSalariesController::class, 'employeeBaseSalaries']);
+        Route::get('deduction/{id}/employee', [DeductionController::class, 'employeeDeductions']);
+
     });
 });
 
