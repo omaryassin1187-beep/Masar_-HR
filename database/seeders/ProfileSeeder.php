@@ -37,15 +37,7 @@ class ProfileSeeder extends Seeder
                 'address' => 'Homs, Syria',
                 'picture' => 'default.jpg',
             ],
-            [
-                'user_id' => 9,
-                'birth_date' => '1994-05-05',
-                'hiring_date' => '2023-07-15',
-                'gender' => 'male',
-                'phone_number' => '0991456789',
-                'address' => 'Latakia, Syria',
-                'picture' => 'default.jpg',
-            ],
+
         ];
 
         foreach ($profiles as $profile) {

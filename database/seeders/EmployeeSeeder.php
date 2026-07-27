@@ -43,7 +43,7 @@ class EmployeeSeeder extends Seeder
             ],
 
         ]);
-        
+
         $employeeBack = User::create([
             'full_name' => 'employeeBack',
             'email' => 'employee4@gmail.com',
