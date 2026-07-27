@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('holidays', function (Blueprint $table) {
+        Schema::create('deductions', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->enum('type',['official','company']);
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('referance_id')->nullable()->constrained('attendances')->cascadeOnDelete();
             $table->date('date');
+            $table->decimal('amount', 15, 2);
+            $table->string('reason');
             $table->timestamps();
         });
     }
@@ -25,8 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('holidays');
+        Schema::dropIfExists('deductions');
     }
 };
-
-   

@@ -19,21 +19,60 @@ class ProfileController extends Controller
     {
         $profile = Auth::user()->profile;
 
+        // التحقق لضمان عدم حدوث خطأ "property id on null" في الـ Resource إذا كان المستخدم لا يملك بروفايل بعد
+        if (!$profile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Profile not found.'
+            ], 404);
+        }
+
         return new ProfileResource($profile);
     }
 
 
     public function store(StoreProfileRequest $request)
     {
+        $user = Auth::user();
+        $userId = $user->id;
+
+        // 1️⃣ التحقق من وجود بروفايل مسبق لهذا المستخدم
+        if (Profile::where('user_id', $userId)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You already have a profile. Only one profile per user is allowed.'
+            ], 409);
+        }
+
         $validated = $request->validated();
-        $userId = Auth::user()->id;
+
+        // 2️⃣ معالجة تاريخ الميلاد بشكل مرن وآمن
+        try {
+            $birthDate = Carbon::parse($validated['birth_date'])->format('Y-m-d');
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid birth date format.'
+            ], 422);
+        }
+
+        // 3️⃣ الاستفادة من علاقة العقود لجلب تاريخ التعيين الحقيقي
+        // سنبحث عن أول عقد موقع أو العقد الفعال الأحدث للمستخدم
+        $latestContract = $user->contracts()
+            ->whereNotNull('signed_at') // نضمن أن العقد موقع ومكتمل
+            ->latest()                  // جلب العقد الأحدث في حال وجود أكثر من عقد
+            ->first();
+
+        // إذا لم يجد عقد موقع، يمكننا وضع تاريخ اليوم كـ Fallback أو إرجاع خطأ حسب منطق النظام لديك
+        $hiringDate = $latestContract ? $latestContract->start_date : now()->format('Y-m-d');
+
         $profileData = [
-            'birth_date' => Carbon::createFromFormat('d-m-Y', $validated['birth_date'])->format('Y-m-d'),
-            'gender' => $validated['gender'],
+            'birth_date'   => $birthDate,
+            'gender'       => $validated['gender'],
             'phone_number' => $validated['phone_number'],
-            'address' => $validated['address'],
-            'user_id' =>  $userId,
-            'hiring_date' => now()->format('Y-m-d')    //تجلب قيمته من تاريخ توقيع عقد العمل
+            'address'      => $validated['address'],
+            'user_id'      => $userId,
+            'hiring_date'  => $hiringDate // ✅ تم الربط بنجاح مع start_date الخاص بالعقد
         ];
 
         if ($request->hasFile('picture')) {
@@ -44,9 +83,9 @@ class ProfileController extends Controller
         $profile = Profile::create($profileData);
 
         return response()->json([
+            'success' => true,
             'message' => 'Profile created successfully',
             'profile' => new ProfileResource($profile)
-
         ], 201);
     }
 

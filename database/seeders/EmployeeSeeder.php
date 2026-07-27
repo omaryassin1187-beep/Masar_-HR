@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Setting;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\User;
@@ -42,36 +43,7 @@ class EmployeeSeeder extends Seeder
             ],
 
         ]);
-        $employeeMarketing = User::create([
-            'full_name' => 'employeeMarketing',
-            'email' => 'employee7@gmail.com',
-            'dep_id' => 3,
-            'password' => Hash::make('11111111'),
-        ]);
-        $employeeMarketing->assignRole('employee');
-        $employeeMarketing->leaveBalance()->createMany([
-
-            [
-                'leave_type' => 'annual',
-                'used_days' => 0,
-                'total_days' => 14,
-            ],
-
-            [
-                'leave_type' => 'sick',
-                'used_days' => 0,
-                'total_days' => 10
-            ],
-
-            [
-                'leave_type' => 'unpaid',
-                'used_days' => 0,
-                'total_days' => null
-            ],
-
-        ]);
-
-
+        
         $employeeBack = User::create([
             'full_name' => 'employeeBack',
             'email' => 'employee4@gmail.com',
@@ -131,5 +103,16 @@ class EmployeeSeeder extends Seeder
             ],
 
         ]);
+
+        $currency = Setting::value('currency');
+        $salaryData = [
+            'hour_price' => 2000,
+            'currency' => $currency,
+            'effective_from' => '2025-06-01',
+        ];
+
+        $employeeMarketing->employeeSalaries()->create($salaryData);
+        $employeeBack->employeeSalaries()->create($salaryData);
+        $employeeFront->employeeSalaries()->create($salaryData);
     }
 }

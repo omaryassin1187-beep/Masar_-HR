@@ -8,6 +8,10 @@ use App\Models\Attendance_Leaves\Attendance;
 use App\Models\Attendance_Leaves\LeaveBalance;
 use App\Models\Attendance_Leaves\LeaveRequest;
 use App\Models\Attendance_Leaves\HourlyLeaveEquest;
+use App\Models\Salary\Deduction;
+use App\Models\Salary\Employee_salaries;
+use App\Models\Salary\EmployeeSalaries;
+use App\Models\Salary\OverTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -94,8 +98,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(Attendance::class);
     }
+
+    public function deduction()
+    {
+        return $this->hasMany(Deduction::class);
+    }
+
     public function contracts()
     {
         return $this->hasMany(Contract::class);
+    }
+
+    public function employeeSalaries()
+    {
+        return $this->hasMany(EmployeeSalaries::class);
+    }
+
+    public function overTimes()
+    {
+        return $this->hasMany(OverTime::class);
     }
 }

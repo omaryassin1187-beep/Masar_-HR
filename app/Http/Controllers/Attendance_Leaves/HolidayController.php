@@ -27,7 +27,7 @@ class HolidayController extends Controller
     {
          $request->validate([
            'name'=>'required|string',
-           'type'=>'required|in:offical,company',
+           'type'=>'required|in:official,company',
            'date'=>'required|date'
         ]);
 
@@ -56,7 +56,7 @@ class HolidayController extends Controller
     {
         $validated = $request->validate([
            'name'=>'sometimes|string',
-           'type'=>'sometimes|in:offical,company',
+           'type'=>'sometimes|in:official,company',
            'date'=>'sometimes|date'
             
         ]);
