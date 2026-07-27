@@ -23,9 +23,17 @@ return new class extends Migration
             $table->integer('annual_leave_days')->default(14);
             $table->string('currency', 3)->default('SYP');
             $table->integer('grace_period')->default(15);
-            $table->decimal('company_latitude', 10, 7)->default(33.5154600); 
-            $table->decimal('company_longitude', 10, 7)->default(36.2788800); 
+            $table->decimal('company_latitude', 10, 7)->default(33.5154600);
+            $table->decimal('company_longitude', 10, 7)->default(36.2788800);
             $table->integer('allowed_radius')->default(200); // بالمتر
+
+            $table->decimal('eval_task_quality_weight', 4, 2)->default(0.40);
+            $table->decimal('eval_task_ontime_weight', 4, 2)->default(0.30);
+            $table->decimal('eval_attendance_weight', 4, 2)->default(0.30);
+            $table->decimal('eval_salary_increase_threshold', 5, 2)->default(95.00);
+            $table->unsignedTinyInteger('eval_min_tenure_days')->default(30);
+
+
             $table->timestamps();
         });
     }

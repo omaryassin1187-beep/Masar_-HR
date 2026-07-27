@@ -20,3 +20,4 @@ Schedule::command('candidates:daily-report')->dailyAt('17:00');
 
 Schedule::command('announcements:update-status')->everyTenMinutes();
 
+Schedule::command('evaluations:generate')->cron('0 2 1 1,4,7,10 *');

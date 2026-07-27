@@ -217,4 +217,29 @@ class AttendanceService
 
         return $earthRadius * $c;
     }
+
+ //
+public function countWorkingDays(Carbon $start, Carbon $end): int
+{
+    $holidays = Holiday::whereBetween('date', [$start->toDateString(), $end->toDateString()])
+        ->pluck('date')
+        ->map(fn ($d) => Carbon::parse($d)->toDateString())
+        ->all();
+
+    $count = 0;
+
+    foreach (Carbon::parse($start)->daysUntil($end->copy()->addDay()) as $date) {
+        if (in_array($date->format('l'), ['Friday', 'Saturday'], true)) {
+            continue;
+        }
+
+        if (in_array($date->toDateString(), $holidays, true)) {
+            continue;
+        }
+
+        $count++;
+    }
+
+    return $count;
+}
 }

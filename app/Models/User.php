@@ -9,6 +9,7 @@ use App\Models\Attendance_Leaves\LeaveBalance;
 use App\Models\Attendance_Leaves\LeaveRequest;
 use App\Models\Attendance_Leaves\HourlyLeaveEquest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -98,4 +99,35 @@ class User extends Authenticatable
     {
         return $this->hasMany(Contract::class);
     }
+
+    public function tasksAssigned(): HasMany
+{
+    return $this->hasMany(Task::class, 'assigned_to');
+}
+
+public function tasksCreated(): HasMany
+{
+    return $this->hasMany(Task::class, 'created_by');
+}
+
+public function tasksReviewed(): HasMany
+{
+    return $this->hasMany(Task::class, 'reviewed_by');
+}
+
+public function taskSubmissions(): HasMany
+{
+    return $this->hasMany(TaskSubmission::class, 'submitted_by');
+}
+
+
+public function notesReceived(): HasMany
+{
+    return $this->hasMany(EmployeeNote::class, 'user_id');
+}
+
+public function notesAuthored(): HasMany
+{
+    return $this->hasMany(EmployeeNote::class, 'author_id');
+}
 }

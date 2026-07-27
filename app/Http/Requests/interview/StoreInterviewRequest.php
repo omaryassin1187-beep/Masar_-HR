@@ -19,7 +19,6 @@ class StoreInterviewRequest extends FormRequest
     {
         return [
             'candidate_id' => ['required', 'integer', 'exists:candidates,id'],
-            'interviewed_by' => ['nullable', 'integer', 'exists:users,id'],
             'scheduled_at' => [
                 'required',
                 'date',
