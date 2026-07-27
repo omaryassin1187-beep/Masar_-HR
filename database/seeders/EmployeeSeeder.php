@@ -44,6 +44,92 @@ class EmployeeSeeder extends Seeder
 
         ]);
 
+        $employeeMarketing2 = User::create([
+            'full_name' => 'employeeMarketing',
+            'email' => 'employee33@gmail.com',
+            'dep_id' => 3,
+            'password' => Hash::make('11111111'),
+        ]);
+        $employeeMarketing->assignRole('employee');
+        $employeeMarketing->leaveBalance()->createMany([
+
+            [
+                'leave_type' => 'annual',
+                'used_days' => 0,
+                'total_days' => 14,
+            ],
+
+            [
+                'leave_type' => 'sick',
+                'used_days' => 0,
+                'total_days' => 10
+            ],
+
+            [
+                'leave_type' => 'unpaid',
+                'used_days' => 0,
+                'total_days' => null
+            ],
+
+        ]);
+
+        $employeeMarketing3 = User::create([
+            'full_name' => 'employeeMarketing',
+            'email' => 'employee36@gmail.com',
+            'dep_id' => 3,
+            'password' => Hash::make('11111111'),
+        ]);
+        $employeeMarketing->assignRole('employee');
+        $employeeMarketing->leaveBalance()->createMany([
+
+            [
+                'leave_type' => 'annual',
+                'used_days' => 0,
+                'total_days' => 14,
+            ],
+
+            [
+                'leave_type' => 'sick',
+                'used_days' => 0,
+                'total_days' => 10
+            ],
+
+            [
+                'leave_type' => 'unpaid',
+                'used_days' => 0,
+                'total_days' => null
+            ],
+
+        ]);
+        $employeeMarketing4 = User::create([
+            'full_name' => 'employeeMarketing',
+            'email' => 'employee113@gmail.com',
+            'dep_id' => 3,
+            'password' => Hash::make('11111111'),
+        ]);
+        $employeeMarketing->assignRole('employee');
+        $employeeMarketing->leaveBalance()->createMany([
+
+            [
+                'leave_type' => 'annual',
+                'used_days' => 0,
+                'total_days' => 14,
+            ],
+
+            [
+                'leave_type' => 'sick',
+                'used_days' => 0,
+                'total_days' => 10
+            ],
+
+            [
+                'leave_type' => 'unpaid',
+                'used_days' => 0,
+                'total_days' => null
+            ],
+
+        ]);
+
         $employeeBack = User::create([
             'full_name' => 'employeeBack',
             'email' => 'employee4@gmail.com',
@@ -104,6 +190,36 @@ class EmployeeSeeder extends Seeder
 
         ]);
 
+          $employeeFront1 = User::create([
+            'full_name' => 'employeeFront',
+            'email' => 'employee55@gmail.com',
+            'dep_id' => 5,
+            'password' => Hash::make('11111111'),
+
+        ]);
+        $employeeFront->assignRole('employee');
+        $employeeFront->leaveBalance()->createMany([
+
+            [
+                'leave_type' => 'annual',
+                'used_days' => 0,
+                'total_days' => 14,
+            ],
+
+            [
+                'leave_type' => 'sick',
+                'used_days' => 0,
+                'total_days' => 10
+            ],
+
+            [
+                'leave_type' => 'unpaid',
+                'used_days' => 0,
+                'total_days' => null
+            ],
+
+        ]);
+
         $currency = Setting::value('currency');
         $salaryData = [
             'hour_price' => 2000,
@@ -112,7 +228,11 @@ class EmployeeSeeder extends Seeder
         ];
 
         $employeeMarketing->employeeSalaries()->create($salaryData);
+        $employeeMarketing2->employeeSalaries()->create($salaryData);
+        $employeeMarketing3->employeeSalaries()->create($salaryData);
+        $employeeMarketing4->employeeSalaries()->create($salaryData);
         $employeeBack->employeeSalaries()->create($salaryData);
         $employeeFront->employeeSalaries()->create($salaryData);
+        $employeeFront1->employeeSalaries()->create($salaryData);
     }
 }
