@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('holidays', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->enum('type',['official','comapany']);
+            $table->enum('type',['official','company']);
             $table->date('date');
             $table->timestamps();
         });

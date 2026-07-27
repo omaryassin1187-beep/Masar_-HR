@@ -6,9 +6,17 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use App\Models\Salary\Deduction;
 use App\Models\Attendance_Leaves\Attendance;
+use App\Services\SalariesService;
 
 class CreateAutoDeductions extends Command
 {
+
+    public function __construct(
+        protected SalariesService $salariesService
+    ) {
+        parent::__construct();
+    }
+
     /**
      * The name and signature of the console command.
      *
@@ -50,7 +58,7 @@ class CreateAutoDeductions extends Command
 
             foreach ($reasons as $reason) {
 
-                Deduction::firstOrCreate(
+                $deduction = Deduction::firstOrCreate(
                     [
                         'referance_id' => $attendance->id,
                         'reason' => $reason,
@@ -58,9 +66,18 @@ class CreateAutoDeductions extends Command
                     [
                         'user_id' => $attendance->user_id,
                         'date' => $attendance->date,
-                        'amount' => 12 //$this->calculateAmount($attendance, $reason),
+                        'amount' => $this->salariesService->calculateDeductionAmount($attendance, $reason),
                     ]
                 );
+
+                if ($deduction->wasRecentlyCreated) {
+
+                    // إشعار الموظف بإنشاء الخصم
+                    $this->salariesService->notifyEmployeeAboutDeduction($deduction);
+
+                    // إشعار الـ HR عند كل مضاعف للرقم 7 من التأخيرات الشهرية
+                    $this->salariesService->notifyHrIfLateThresholdReached($attendance);
+                }
             }
         }
 

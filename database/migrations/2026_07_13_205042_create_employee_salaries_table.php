@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('deductions', function (Blueprint $table) {
+        Schema::create('employee_salaries', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('referance_id')->nullable()->constrained('attendances')->cascadeOnDelete();
-            $table->date('date');
-            $table->decimal('amount', 15, 2);
-            $table->string('reason');
+            $table->decimal('hour_price', 10, 2);
+            $table->string('currency', 3)->default('SYP');
+            $table->date('effective_from');
+            $table->date('effective_to')->nullable();
+            $table->string('reason')->nullable();
             $table->timestamps();
         });
     }
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('deductions');
+        Schema::dropIfExists('employee_salaries');
     }
 };

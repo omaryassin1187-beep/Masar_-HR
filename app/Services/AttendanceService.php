@@ -9,7 +9,7 @@ use App\Models\Attendance_Leaves\LeaveRequest;
 use App\Models\Attendance_Leaves\Attendance;
 use App\Models\Setting;
 use Carbon\Carbon;
-
+use App\Models\Salary\OverTime;
 
 class AttendanceService
 {
@@ -49,21 +49,102 @@ class AttendanceService
             ->exists();
     }
 
-
-    public function getAllowedCheckInTime(User $user, Carbon|string $date, Setting $settings): Carbon
+    private function getApprovedOverTime(User $user, Carbon|string $date): ?OverTime
     {
+        return OverTime::query()
+            ->where('user_id', $user->id)
+            ->whereDate('date', $date)
+            ->where('status', 'approved')
+            ->first();
+    }
+
+
+    public function getExpectedWorkingHours(
+        User $user,
+        Carbon|string $date
+    ): array {
+
         $date = Carbon::parse($date);
 
-        $allowedTime = Carbon::parse(
+        $settings = Setting::instance();
+
+        $expectedCheckIn = Carbon::parse(
             $date->format('Y-m-d') . ' ' . $settings->expected_check_in
         );
+
+        $expectedCheckOut = Carbon::parse(
+            $date->format('Y-m-d') . ' ' . $settings->expected_check_out
+        );
+
+        $overtime = $this->getApprovedOverTime($user, $date);
+
+        if (!$overtime) {
+
+            return [
+                'check_in' => $expectedCheckIn,
+                'check_out' => $expectedCheckOut,
+            ];
+        }
+
+        /*
+        |------------------------------------------
+        | يوم دوام
+        |------------------------------------------
+        */
+
+        if ($this->isWorkingDay($date)) {
+
+            return [
+
+                'check_in' => $expectedCheckIn,
+
+                // نهاية الدوام تصبح نهاية الـ OT
+                'check_out' => Carbon::parse(
+                    $date->format('Y-m-d') . ' ' . $overtime->end_time
+                ),
+            ];
+        }
+
+        /*
+        |------------------------------------------
+        | يوم عطلة
+        |------------------------------------------
+        */
+
+        return [
+
+            'check_in' => Carbon::parse(
+                $date->format('Y-m-d') . ' ' . $overtime->start_time
+            ),
+
+            'check_out' => Carbon::parse(
+                $date->format('Y-m-d') . ' ' . $overtime->end_time
+            ),
+        ];
+    }
+
+
+    public function getAllowedCheckInTime(
+        User $user,
+        Carbon|string $date,
+        Setting $settings
+    ): Carbon {
+
+        $date = Carbon::parse($date);
+
+        $workingHours = $this->getExpectedWorkingHours($user, $date);
+
+        $allowedTime = $workingHours['check_in']->copy();
 
         // نبحث فقط عن إجازة تبدأ مع بداية الدوام
         $hourlyLeave = HourlyLeaveEquest::query()
             ->where('user_id', $user->id)
             ->whereDate('date', $date)
             ->where('status', 'approved')
-            ->whereTime('start_time', $settings->expected_check_in)
+            ->whereTime(
+                'start_time',
+                $workingHours['check_in']->format('H:i:s')
+            )
             ->first();
 
         if ($hourlyLeave) {
@@ -91,16 +172,22 @@ class AttendanceService
 
         $date = Carbon::parse($date);
 
-        $expectedCheckOut = Carbon::parse(
-            $date->format('Y-m-d') . ' ' . $settings->expected_check_out
+        $workingHours = $this->getExpectedWorkingHours(
+            $attendance->user,
+            $date
         );
+
+        $expectedCheckOut = $workingHours['check_out']->copy();
 
         // نبحث فقط عن إجازة تنتهي مع نهاية الدوام
         $hourlyLeave = HourlyLeaveEquest::query()
             ->where('user_id', $attendance->user_id)
             ->whereDate('date', $date)
             ->where('status', 'approved')
-            ->whereTime('end_time', $settings->expected_check_out)
+            ->whereTime(
+                'end_time',
+                $workingHours['check_out']->format('H:i:s')
+            )
             ->first();
 
         if ($hourlyLeave) {
@@ -115,6 +202,7 @@ class AttendanceService
         if ($checkOut->gte($expectedCheckOut)) {
             return 0;
         }
+
 
         return $checkOut->diffInMinutes($expectedCheckOut);
     }
@@ -178,7 +266,7 @@ class AttendanceService
     ): bool {
 
         $settings = Setting::firstOrFail();
-       // dd($settings);
+        // dd($settings);
         $distance = $this->calculateDistance(
             $userLatitude,
             $userLongitude,
