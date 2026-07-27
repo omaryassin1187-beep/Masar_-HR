@@ -23,10 +23,18 @@ class Setting extends Model
         'annual_leave_days',
         'currency',
         'grace_period',
+        'eval_task_quality_weight',
+        'eval_task_ontime_weight',
+        'eval_attendance_weight',
+        'eval_salary_increase_threshold',
     ];
 
     protected $casts = [
         'weekend_days' => 'array',
+        'eval_task_quality_weight' => 'decimal:2',
+        'eval_task_ontime_weight' => 'decimal:2',
+        'eval_attendance_weight' => 'decimal:2',
+        'eval_salary_increase_threshold' => 'decimal:2',
     ];
 
     // تطبيق فكرة ال singleton
@@ -58,17 +66,21 @@ class Setting extends Model
             'annual_leave_days'       => 14,
             'currency'                => 'SYP',
             'grace_period'            => 15,
-            'company_latitude'        =>33.5154600,
-            'company_longitude'       =>36.2788800,
-            'allowed_radius'          =>200
+            'company_latitude'        => 33.5154600,
+            'company_longitude'       => 36.2788800,
+            'allowed_radius'          => 200,
+            'eval_task_quality_weight'       => 0.40,
+            'eval_task_ontime_weight'        => 0.30,
+            'eval_attendance_weight'         => 0.30,
+            'eval_salary_increase_threshold' => 95.00,
         ];
     }
 
     public function workingHoursPerDay(): int
-{
-    $checkIn  = Carbon::parse($this->expected_check_in);  // "09:00:00"
-    $checkOut = Carbon::parse($this->expected_check_out); // "17:00:00"
+    {
+        $checkIn  = Carbon::parse($this->expected_check_in);  // "09:00:00"
+        $checkOut = Carbon::parse($this->expected_check_out); // "17:00:00"
 
-    return (int) $checkIn->diffInHours($checkOut); // 8
-}
+        return (int) $checkIn->diffInHours($checkOut); // 8
+    }
 }

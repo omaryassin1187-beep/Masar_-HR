@@ -8,13 +8,15 @@ use App\Http\Controllers\Attendance_Leaves\HolidayController;
 use App\Http\Controllers\Attendance_Leaves\LeaveRequestController;
 use App\Http\Controllers\Attendance_Leaves\HourlyLeaveRequestController;
 use App\Http\Controllers\Attendance_Leaves\AttendanceController;
-use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\ContractRenewalController;
 use App\Http\Controllers\Salary\DeductionController;
 use App\Http\Controllers\Reqruitment\ContractSignatureController;
 use App\Http\Controllers\Reqruitment\JobRequisitionController;
 use App\Http\Controllers\Reqruitment\OfferController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\ComplaintController;
+use App\Http\Controllers\EmployeeNoteController;
+use App\Http\Controllers\PerformanceEvaluationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
@@ -23,6 +25,9 @@ use App\Http\Controllers\Reqruitment\OnboardingController;
 use App\Http\Controllers\Salary\EmployeeSalariesController;
 use App\Http\Controllers\Salary\OverTimeController;
 use App\Http\Controllers\SkillController;
+use App\Http\Controllers\Task\TaskController;
+use App\Http\Controllers\Task\TaskReviewController;
+use App\Http\Controllers\Task\TaskSubmissionController;
 use App\Http\Controllers\userController;
 
 Route::post('putPassword', [UserController::class, 'putUserPassword']);
@@ -86,12 +91,20 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/department/users', [UserController::class, 'getDepartmentUsers']);
 
+    Route::get('/tasks', [TaskController::class, 'index']);
+    Route::get('/tasks/{task}', [TaskController::class, 'show']);
+    Route::get('/task-submissions/{submission}/attachment', [TaskSubmissionController::class, 'downloadAttachment'])
+        ->name('task-submissions.attachment')
+        ->middleware(['signed']);
+
     Route::get('/complaints/{complaint}', [ComplaintController::class, 'show']);
 
     Route::get('overtimes/{id}', [OverTimeController::class, 'show']);
     Route::post('store-overtime-byemployee', [OverTimeController::class, 'storeByEmployee']);
     Route::get('my-overtimes', [OverTimeController::class, 'myOverTimes']);
     Route::delete('delete-overtime/{id}/request', [OverTimeController::class, 'destroy']);
+
+
 
 
     //---------------manager routes-------------
@@ -118,6 +131,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('hourly-leave-requests/{id}/approve', [HourlyLeaveRequestController::class, 'approveHourlyLeaveRequest']);
         Route::put('hourly-leave-requests/{id}/reject', [HourlyLeaveRequestController::class, 'rejectHourlyLeaveRequest']);
 
+        Route::post('/tasks', [TaskController::class, 'store']);
+        Route::put('/tasks/{task}', [TaskController::class, 'update']);
+        Route::post('/tasks/{task}/cancel', [TaskController::class, 'cancel']);
+
+        Route::post('/task-submissions/{submission}/review', [TaskReviewController::class, 'store']);
         Route::post('store-overtime-bymanager', [OverTimeController::class, 'storeByManager']);
         Route::get('my-created-overtime-manager', [OverTimeController::class, 'getMyCreatedOverTimeRequests']);
         Route::get('my-department-overtime', [OverTimeController::class, 'getMyDepartmentEmployeeOverTimeRequests']);
@@ -216,8 +234,26 @@ Route::middleware('auth:sanctum')->group(function () {
 
             // تحميل السيرة الذاتية للمرشح
             Route::get('/candidates/{candidate}/cv', [CandidateController::class, 'downloadCv'])->name('candidates.cv');
+
+
+            Route::get('users/{employee}/notes', [EmployeeNoteController::class, 'index']);
+            Route::post('users/{employee}/notes', [EmployeeNoteController::class, 'store']);
+
+
+            Route::get('evaluations', [PerformanceEvaluationController::class, 'index']);
+            Route::get('evaluations/{evaluation}', [PerformanceEvaluationController::class, 'show']);
+            Route::post('evaluations/{evaluation}/submit-assessment', [PerformanceEvaluationController::class, 'submitAssessment']);
+            Route::post('evaluations/{evaluation}/hr-approve', [PerformanceEvaluationController::class, 'hrApprove']);
         }
     );
+    //---------------Employee routes-------------
+
+    Route::middleware(['role:employee'])->group(function () {
+        Route::post('/tasks/{task}/start', [TaskController::class, 'start']);
+        Route::post('/tasks/{task}/submit', [TaskSubmissionController::class, 'store']);
+        Route::get('myevaluations', [PerformanceEvaluationController::class, 'index']);
+
+    });
 
 
     //---------------Admin & manager & HR routes-------------
@@ -241,9 +277,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update']);
         Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy']);
         Route::patch('/announcements/{announcement}/publish', [AnnouncementController::class, 'publish']);
-      
-        Route::get('search-employees', [userController::class, 'searchEmployees']);
 
+        Route::get('search-employees', [userController::class, 'searchEmployees']);
         Route::get('base/{id}/employee-salaries', [EmployeeSalariesController::class, 'employeeBaseSalaries']);
         Route::get('deduction/{id}/employee', [DeductionController::class, 'employeeDeductions']);
 

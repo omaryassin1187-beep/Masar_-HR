@@ -22,5 +22,6 @@ Schedule::command('candidates:daily-report')->dailyAt('17:00');
 
 Schedule::command('announcements:update-status')->everyTenMinutes();
 
+Schedule::command('evaluations:generate')->cron('0 2 1 1,4,7,10 *');
 Schedule::command(CreateAutoDeductions::class)->dailyAt('23:50');//dailyAt('23:50');
 Schedule::command(CompleteApprovedOverTimes::class)->everyTenMinutes();//everyTenMinutes();
