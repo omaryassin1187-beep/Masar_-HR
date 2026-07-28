@@ -36,7 +36,8 @@ return new class extends Migration
             $table->index('subject_id');
         });
     }
-
+//
+//test
     public function down(): void
     {
         Schema::dropIfExists('complaints');
