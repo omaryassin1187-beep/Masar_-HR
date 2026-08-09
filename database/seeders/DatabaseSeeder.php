@@ -23,7 +23,9 @@ class DatabaseSeeder extends Seeder
             SkillSeeder::class,
             EmployeeSeeder::class,
             HolidaySeeder::class,
-            ProfileSeeder::class
+            ProfileSeeder::class,
+            RecruitmentSeeder::class,
+            ContractSeeder::class,
         ]);
 
     }

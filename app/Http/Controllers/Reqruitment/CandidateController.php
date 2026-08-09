@@ -88,7 +88,7 @@ class CandidateController extends Controller
         );
     }
 
-    public function show(Candidate $candidate ): JsonResponse
+    public function show(Candidate $candidate): JsonResponse
     {
         $this->authorize('view', $candidate);
 
@@ -119,5 +119,48 @@ class CandidateController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function getCandidateCvAndSkills(int $candidateId)   //for AI filtering
+    {
+        $candidate = Candidate::with([
+            'jobPosting.requisition.skills',
+            'skills',
+        ])->findOrFail($candidateId);
+
+        return [
+            'candidate' => [
+                'id' => $candidate->id,
+                'full_name' => $candidate->full_name,
+                'email' => $candidate->email,
+                'experience' => $candidate->experience,
+                'cv_path' => $candidate->cv_path,
+                'cover_letter' => $candidate->cover_letter,
+                'more_skill' => $candidate->more_skill,
+            ],
+
+            'job' => [
+                'job_posting_id' => $candidate->job_posting_id,
+                'job_title' => $candidate->jobPosting->job_title,
+            ],
+
+            'candidate_skills' => $candidate->skills->map(function ($skill) {
+                return [
+                    'id' => $skill->id,
+                    'name' => $skill->name,
+                    'more_skill' => $skill->pivot->more_skill,
+                ];
+            }),
+
+            'required_skills' => $candidate->jobPosting
+                ->requisition
+                ->skills
+                ->map(function ($skill) {
+                    return [
+                        'id' => $skill->id,
+                        'name' => $skill->name,
+                    ];
+                }),
+        ];
     }
 }

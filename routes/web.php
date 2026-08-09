@@ -45,6 +45,14 @@ Route::get('/set-password', function (Request $request) {
 })->name('password.set');
 
 
+Route::get('/reset-password', [userController::class, 'showResetForm'])
+    ->name('password.reset.form');
+Route::post('/reset-password', [UserController::class, 'resetPassword'])
+    ->name('password.reset');
+
+
+
+
 // روابط توقيع العقود الإلكترونية - MasarHR (خارج Sanctum ومؤمنة بالتوقيع الرقمي للرابط)
 // روابط توقيع العقود الإلكترونية - MasarHR (خارج Sanctum ومؤمنة بالتوقيع الرقمي للرابط)
 Route::group(['middleware' => ['signed']], function () {

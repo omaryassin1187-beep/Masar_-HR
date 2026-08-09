@@ -23,7 +23,10 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Reqruitment\ContractController;
 use App\Http\Controllers\Reqruitment\OnboardingController;
 use App\Http\Controllers\Salary\EmployeeSalariesController;
+use App\Http\Controllers\Salary\IncentiveController;
 use App\Http\Controllers\Salary\OverTimeController;
+use App\Http\Controllers\Salary\PayrollController;
+use App\Http\Controllers\Salary\PayslipsController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\Task\TaskController;
 use App\Http\Controllers\Task\TaskReviewController;
@@ -31,6 +34,8 @@ use App\Http\Controllers\Task\TaskSubmissionController;
 use App\Http\Controllers\userController;
 
 Route::post('putPassword', [UserController::class, 'putUserPassword']);
+Route::post('/forgot-password', [userController::class, 'forgotPassword']);
+
 
 Route::post('login', [userController::class, 'login']);
 
@@ -104,7 +109,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('my-overtimes', [OverTimeController::class, 'myOverTimes']);
     Route::delete('delete-overtime/{id}/request', [OverTimeController::class, 'destroy']);
 
+    Route::get('my-incentives', [IncentiveController::class, 'myIncentives']);
 
+    Route::get('my-payslips', [PayslipsController::class, 'myPayslips']);
+    Route::get('payslips/{id}', [PayslipsController::class, 'show']);
+    Route::get('/payslips/{id}/download', [PayslipsController::class, 'download']);
+    Route::get('/payslips/{id}/preview', [PayslipsController::class, 'preview']);
+
+    Route::get('CV-candidateSkills/{id}/requiedSkills', [CandidateController::class, 'getCandidateCvAndSkills']);//for AI filtering
 
 
     //---------------manager routes-------------
@@ -205,6 +217,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('mandatory-overtime', [OverTimeController::class, 'managerRequests']);
         Route::get('voluntary-overtime', [OverTimeController::class, 'getAllEmployeeOverTimeRequests']);
 
+        Route::apiResource('incentives', IncentiveController::class);
     });
 
 
@@ -215,6 +228,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('settings',   [SettingController::class, 'show']);
         Route::put('settings',   [SettingController::class, 'update']);
+
+        Route::get('payroll/current', [PayrollController::class, 'current']);
+        Route::post('payroll/generate', [PayrollController::class, 'generate']);
+        Route::get('payrolls', [PayrollController::class, 'index']);
     });
 
     //--------------- manager & HR routes-------------
@@ -270,6 +287,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('attendance-today-analysis', [AttendanceController::class, 'getTodayAttendanceSummary']);
         Route::get('attendance-today', [AttendanceController::class, 'getTodayAttendances']);
         Route::get('attendance-filter', [AttendanceController::class, 'getFilteredAttendances']);
+        Route::get('attendance-percentage', [AttendanceController::class, 'getMonthlyAttendancePercentage']);
 
 
         Route::get('/announcements', [AnnouncementController::class, 'index']);
@@ -282,6 +300,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('base/{id}/employee-salaries', [EmployeeSalariesController::class, 'employeeBaseSalaries']);
         Route::get('deduction/{id}/employee', [DeductionController::class, 'employeeDeductions']);
 
+        Route::get('current-month-payslips', [PayslipsController::class, 'current']);
+        Route::get('summary-payslips', [PayslipsController::class, 'summary']);
     });
 });
 
