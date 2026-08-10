@@ -7,8 +7,11 @@ use App\Http\Requests\Evaluation\SubmitManagerAssessmentRequest;
 use App\Http\Resources\Evaluation\PerformanceEvaluationResource;
 use App\Models\EmployeeNote;
 use App\Models\PerformanceEvaluation;
+use App\Models\User;
 use App\Services\Evaluation\EvaluationService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PerformanceEvaluationController extends Controller
@@ -75,4 +78,97 @@ class PerformanceEvaluationController extends Controller
 
         return new PerformanceEvaluationResource($evaluation->load(['employee', 'manager', 'hrReviewer']));
     }
+
+
+private function calculateQuarterlyPerformance(int $departmentId, int $quartersCount = 4): array
+{
+    $employeeIds = User::role('employee')
+        ->where('dep_id', $departmentId)
+        ->pluck('id')
+        ->toArray();
+
+    if (empty($employeeIds)) {
+        return [];
+    }
+    $currentDate = Carbon::now();
+    $currentQuarter = (int) ceil($currentDate->month / 3);
+    $currentYear    = $currentDate->year;
+
+    $quartersList = [];
+    $tempQuarter  = $currentQuarter;
+    $tempYear     = $currentYear;
+
+    for ($i = 0; $i < $quartersCount; $i++) {
+        $quartersList[] = [
+            'quarter' => $tempQuarter,
+            'year'    => $tempYear,
+            'label'   => "Q{$tempQuarter} {$tempYear}",
+        ];
+
+        $tempQuarter--;
+        if ($tempQuarter < 1) {
+            $tempQuarter = 4;
+            $tempYear--;
+        }
+    }
+
+    $quartersList = array_reverse($quartersList);
+
+    $scores = PerformanceEvaluation::query()
+        ->whereIn('employee_id', $employeeIds)
+        ->where('status', PerformanceEvaluation::STATUS_APPROVED)
+        ->where(function ($query) use ($quartersList) {
+            foreach ($quartersList as $q) {
+                $query->orWhere(function ($sub) use ($q) {
+                    $sub->where('year', $q['year'])->where('quarter', $q['quarter']);
+                });
+            }
+        })
+        ->selectRaw('year, quarter, AVG(final_score) as avg_score')
+        ->groupBy('year', 'quarter')
+        ->get()
+        ->keyBy(fn ($item) => "{$item->year}_{$item->quarter}");
+
+    $result = [];
+    foreach ($quartersList as $q) {
+        $key   = "{$q['year']}_{$q['quarter']}";
+        $score = isset($scores[$key]) ? (float) $scores[$key]->avg_score : 0;
+
+        $result[] = [
+            'quarter' => $q['label'], // مثال: "Q1 2026"
+            'score'   => round($score, 2),
+        ];
+    }
+
+    return $result;
+}
+public function getDepartmentQuarterlyPerformance(Request $request): JsonResponse
+{
+    $this->authorize('viewDepartmentPerformance', PerformanceEvaluation::class);
+
+    $departmentId = $request->has('department_id')
+        ? (int) $request->input('department_id')
+        : null;
+
+    $data = $this->service->getDepartmentQuarterlyPerformance($departmentId, 4);
+
+    return response()->json([
+        'success' => true,
+        'data'    => $data,
+    ], 200);
+}
+
+public function getTopPerformers(Request $request): JsonResponse
+{
+    $this->authorize('viewDepartmentPerformance', PerformanceEvaluation::class);
+
+    $limit = (int) $request->input('limit', 3);
+
+    $data = $this->service->getTopPerformersForLatestQuarter($request->user()->dep_id, $limit);
+
+    return response()->json([
+        'success' => true,
+        'data'    => $data,
+    ], 200);
+}
 }

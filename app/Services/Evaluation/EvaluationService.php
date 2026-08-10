@@ -118,4 +118,119 @@ class EvaluationService
 
         return $evaluation->fresh();
     }
+
+    public function getDepartmentQuarterlyPerformance(int $departmentId, int $quartersCount = 4): array
+{
+    $employeeIds = User::role('employee')
+        ->where('dep_id', $departmentId)
+        ->pluck('id')
+        ->toArray();
+
+    if (empty($employeeIds)) {
+        return [];
+    }
+
+    $quartersList = $this->buildRecentQuartersList($quartersCount);
+
+    $scores = PerformanceEvaluation::query()
+        ->whereIn('employee_id', $employeeIds)
+        ->where('status', PerformanceEvaluation::STATUS_APPROVED)
+        ->where(function ($query) use ($quartersList) {
+            foreach ($quartersList as $q) {
+                $query->orWhere(function ($sub) use ($q) {
+                    $sub->where('year', $q['year'])->where('quarter', $q['quarter']);
+                });
+            }
+        })
+        ->selectRaw('year, quarter, AVG(final_score) as avg_score')
+        ->groupBy('year', 'quarter')
+        ->get()
+        ->keyBy(fn ($item) => "{$item->year}_{$item->quarter}");
+
+    $result = [];
+    foreach ($quartersList as $q) {
+        $key   = "{$q['year']}_{$q['quarter']}";
+        $score = isset($scores[$key]) ? (float) $scores[$key]->avg_score : 0;
+
+        $result[] = [
+            'quarter' => $q['label'],
+            'score'   => round($score, 2),
+        ];
+    }
+
+    return $result;
+}
+
+public function getTopPerformersForLatestQuarter(int $departmentId, int $limit = 3): array
+{
+    $employeeIds = User::role('employee')
+        ->where('dep_id', $departmentId)
+        ->pluck('id')
+        ->toArray();
+
+    if (empty($employeeIds)) {
+        return ['year' => null, 'quarter' => null, 'employees' => []];
+    }
+
+    $currentYear = Carbon::now()->year;
+
+    $latestQuarter = PerformanceEvaluation::query()
+        ->whereIn('employee_id', $employeeIds)
+        ->where('status', PerformanceEvaluation::STATUS_APPROVED)
+        ->where('year', $currentYear)
+        ->max('quarter');
+
+    if (is_null($latestQuarter)) {
+        return ['year' => $currentYear, 'quarter' => null, 'employees' => []];
+    }
+
+    $topEmployees = PerformanceEvaluation::query()
+        ->with('employee:id,full_name,job_title')
+        ->whereIn('employee_id', $employeeIds)
+        ->where('status', PerformanceEvaluation::STATUS_APPROVED)
+        ->where('year', $currentYear)
+        ->where('quarter', $latestQuarter)
+        ->whereNotNull('final_score')
+        ->orderByDesc('final_score')
+        ->limit($limit)
+        ->get()
+        ->map(fn ($evaluation) => [
+            'employee_id'  => $evaluation->employee_id,
+            'full_name'    => $evaluation->employee?->full_name,
+            'job_title'    => $evaluation->employee?->job_title,
+            'final_score'  => (float) $evaluation->final_score,
+            'rating_label' => $evaluation->rating_label,
+        ]);
+
+    return [
+        'year'      => $currentYear,
+        'quarter'   => $latestQuarter,
+        'employees' => $topEmployees,
+    ];
+}
+
+private function buildRecentQuartersList(int $quartersCount): array
+{
+    $currentDate    = Carbon::now();
+    $tempQuarter    = (int) ceil($currentDate->month / 3);
+    $tempYear       = $currentDate->year;
+
+    $quartersList = [];
+
+    for ($i = 0; $i < $quartersCount; $i++) {
+        $quartersList[] = [
+            'quarter' => $tempQuarter,
+            'year'    => $tempYear,
+            'label'   => "Q{$tempQuarter} {$tempYear}",
+        ];
+
+        $tempQuarter--;
+        if ($tempQuarter < 1) {
+            $tempQuarter = 4;
+            $tempYear--;
+        }
+    }
+
+    return array_reverse($quartersList);
+}
 }

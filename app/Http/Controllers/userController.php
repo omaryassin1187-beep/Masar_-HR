@@ -11,30 +11,30 @@ use App\Http\Resources\UserResource;
 
 class userController extends Controller
 {
-public function putUserPassword(Request $request)
-{
-    $request->validate([
-        'email'    => ['required', 'email', 'exists:users,email'],
-        'password' => ['required', 'min:8', 'confirmed'],
-    ]);
+    public function putUserPassword(Request $request)
+    {
+        $request->validate([
+            'email'    => ['required', 'email', 'exists:users,email'],
+            'password' => ['required', 'min:8', 'confirmed'],
+        ]);
 
-    $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
 
-    if ($user->is_first_login === false || $user->password !== null) {
+        if ($user->is_first_login === false || $user->password !== null) {
+            return response()->json([
+                'message' => 'Security alert: Password has already been configured for this account.'
+            ], 422);
+        }
+
+        $user->update([
+            'password'       => Hash::make($request->password),
+            'is_first_login' => false,
+        ]);
+
         return response()->json([
-            'message' => 'Security alert: Password has already been configured for this account.'
-        ], 422);
+            'message' => 'Password set successfully.',
+        ], 200);
     }
-
-    $user->update([
-        'password'       => Hash::make($request->password),
-        'is_first_login' => false,
-    ]);
-
-    return response()->json([
-        'message' => 'Password set successfully.',
-    ], 200);
-}
     public function login(Request $request)
     {
         $request->validate([
@@ -154,48 +154,48 @@ public function putUserPassword(Request $request)
     }
 
     public function searchEmployees(Request $request)
-{
-    $search = trim($request->search);
+    {
+        $search = trim($request->search);
 
-    $user = auth()->user();
+        $user = auth()->user();
 
-    $query = User::role('employee');
+        $query = User::role('employee');
 
-    // المدير يرى موظفي قسمه فقط
-    if ($user->hasRole('manager')) {
-        $query->where('dep_id', $user->dep_id);
+        // المدير يرى موظفي قسمه فقط
+        if ($user->hasRole('manager')) {
+            $query->where('dep_id', $user->dep_id);
+        }
+
+        // Admin و HR يرون جميع الموظفين
+
+        $employees = (clone $query)
+            ->where('full_name', 'like', "%{$search}%")
+            ->get();
+
+        // إذا لم يجد نتائج مطابقة
+        if ($employees->isEmpty()) {
+
+            $employees = $query
+                ->get()
+                ->map(function ($employee) use ($search) {
+
+                    similar_text(
+                        mb_strtolower($search),
+                        mb_strtolower($employee->full_name),
+                        $percent
+                    );
+
+                    $employee->similarity = $percent;
+
+                    return $employee;
+                })
+                ->sortByDesc('similarity')
+                ->take(5)
+                ->values();
+        }
+
+        return response()->json($employees);
     }
-
-    // Admin و HR يرون جميع الموظفين
-
-    $employees = (clone $query)
-        ->where('full_name', 'like', "%{$search}%")
-        ->get();
-
-    // إذا لم يجد نتائج مطابقة
-    if ($employees->isEmpty()) {
-
-        $employees = $query
-            ->get()
-            ->map(function ($employee) use ($search) {
-
-                similar_text(
-                    mb_strtolower($search),
-                    mb_strtolower($employee->full_name),
-                    $percent
-                );
-
-                $employee->similarity = $percent;
-
-                return $employee;
-            })
-            ->sortByDesc('similarity')
-            ->take(5)
-            ->values();
-    }
-
-    return response()->json($employees);
-}
 
     public function changePassword(Request $request): JsonResponse
     {
@@ -213,34 +213,92 @@ public function putUserPassword(Request $request)
             'message' => 'Password changed successfully.',
         ]);
     }
-   
 
-//لجلب موظفين + مدير القسم حسب القسم الحالي للمستخدم
-public function getDepartmentUsers(): JsonResponse
+
+    //لجلب موظفين + مدير القسم حسب القسم الحالي للمستخدم
+    public function getDepartmentUsers(): JsonResponse
+    {
+        $user = auth()->user();
+
+        $users = User::where('dep_id', $user->dep_id)
+            ->where('id', '!=', $user->id)
+            ->select('id', 'full_name', 'email', 'dep_id')
+            ->with('roles')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'full_name' => $user->full_name,
+                    'email' => $user->email,
+                    'role' => $user->roles->first()?->name ?? 'employee',
+                    'is_manager' => $user->hasRole('manager'),
+                ];
+            });
+
+        $sorted = $users->sortByDesc('is_manager')->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => $sorted,
+        ]);
+    }
+
+    //عدد الموظفين والمدراء في النظام
+    public function getUsersCount(): JsonResponse
+    {
+        $employeesCount = User::role('employee')->count();
+        $managersCount = User::role('manager')->count();
+        $totalUsers = User::count();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'total_users' => $totalUsers,
+                'employees_count' => $employeesCount,
+                'managers_count' => $managersCount,
+                'others_count' => $totalUsers - ($employeesCount + $managersCount),
+            ]
+        ], 200);
+    }
+
+    //لجلب جميع الموظفين (role = employee)
+    public function getEmployees(): JsonResponse
+    {
+        $employees = User::role('employee')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => UserResource::collection($employees),
+        ], 200);
+    }
+
+    //لجلب جميع المدراء (role = manager)
+    public function getManagers(): JsonResponse
+    {
+        $managers = User::role('manager')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => UserResource::collection($managers),
+        ], 200);
+    }
+
+public function getNewHiresThisMonth()
 {
-    $user = auth()->user();
+    $startOfMonth = now()->startOfMonth();
+    $endOfMonth   = now()->endOfMonth();
 
-    $users = User::where('dep_id', $user->dep_id)
-        ->where('id', '!=', $user->id)
-        ->select('id', 'full_name', 'email', 'dep_id')
-        ->with('roles')
-        ->get()
-        ->map(function ($user) {
-            return [
-                'id' => $user->id,
-                'full_name' => $user->full_name,
-                'email' => $user->email,
-                'role' => $user->roles->first()?->name ?? 'employee',
-                'is_manager' => $user->hasRole('manager'),
-            ];
+    $query = User::role('employee')
+        ->whereHas('profile', function ($q) use ($startOfMonth, $endOfMonth) {
+            $q->whereBetween('hiring_date', [$startOfMonth, $endOfMonth]);
         });
 
-    $sorted = $users->sortByDesc('is_manager')->values();
+    $employees = $query->with(['department', 'profile'])->get();
 
     return response()->json([
-        'success' => true,
-        'data' => $sorted,
+        'status' => true,
+        'count'  => $employees->count(),
+        'data'   => UserResource::collection($employees),
     ]);
 }
-   
 }

@@ -38,5 +38,9 @@ class PerformanceEvaluationPolicy
             && $evaluation->status === PerformanceEvaluation::STATUS_PENDING_HR;
     }
 
-    // لا يوجد destroy — سجل التقييم الدوري أساس التاريخ الوظيفي، لا يُحذف
+    public function viewDepartmentPerformance(User $user): bool
+{
+    return $user->hasRole('admin');
+}
+
 }
