@@ -11,6 +11,7 @@ use App\Models\Attendance_Leaves\HourlyLeaveEquest;
 use App\Models\Salary\Deduction;
 use App\Models\Salary\Employee_salaries;
 use App\Models\Salary\EmployeeSalaries;
+use App\Models\Salary\Incentive;
 use App\Models\Salary\OverTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -148,5 +149,10 @@ public function notesAuthored(): HasMany
     public function overTimes()
     {
         return $this->hasMany(OverTime::class);
+    }
+
+    public function incentives()
+    {
+        return $this->hasMany(Incentive::class);
     }
 }

@@ -54,6 +54,7 @@ class HrSeeder extends Seeder
         ];
 
         $HR->employeeSalaries()->create($salaryData);
-       
+
+        
     }
 }

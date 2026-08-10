@@ -50,8 +50,8 @@ class EmployeeSeeder extends Seeder
             'dep_id' => 3,
             'password' => Hash::make('11111111'),
         ]);
-        $employeeMarketing->assignRole('employee');
-        $employeeMarketing->leaveBalance()->createMany([
+        $employeeMarketing2->assignRole('employee');
+        $employeeMarketing2->leaveBalance()->createMany([
 
             [
                 'leave_type' => 'annual',
@@ -79,8 +79,8 @@ class EmployeeSeeder extends Seeder
             'dep_id' => 3,
             'password' => Hash::make('11111111'),
         ]);
-        $employeeMarketing->assignRole('employee');
-        $employeeMarketing->leaveBalance()->createMany([
+        $employeeMarketing3->assignRole('employee');
+        $employeeMarketing3->leaveBalance()->createMany([
 
             [
                 'leave_type' => 'annual',
@@ -107,8 +107,8 @@ class EmployeeSeeder extends Seeder
             'dep_id' => 3,
             'password' => Hash::make('11111111'),
         ]);
-        $employeeMarketing->assignRole('employee');
-        $employeeMarketing->leaveBalance()->createMany([
+        $employeeMarketing4->assignRole('employee');
+        $employeeMarketing4->leaveBalance()->createMany([
 
             [
                 'leave_type' => 'annual',
@@ -190,15 +190,15 @@ class EmployeeSeeder extends Seeder
 
         ]);
 
-          $employeeFront1 = User::create([
+        $employeeFront1 = User::create([
             'full_name' => 'employeeFront',
             'email' => 'employee55@gmail.com',
             'dep_id' => 5,
             'password' => Hash::make('11111111'),
 
         ]);
-        $employeeFront->assignRole('employee');
-        $employeeFront->leaveBalance()->createMany([
+        $employeeFront1->assignRole('employee');
+        $employeeFront1->leaveBalance()->createMany([
 
             [
                 'leave_type' => 'annual',
@@ -234,5 +234,7 @@ class EmployeeSeeder extends Seeder
         $employeeBack->employeeSalaries()->create($salaryData);
         $employeeFront->employeeSalaries()->create($salaryData);
         $employeeFront1->employeeSalaries()->create($salaryData);
+
+        
     }
 }

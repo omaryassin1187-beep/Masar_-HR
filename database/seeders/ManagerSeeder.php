@@ -116,5 +116,7 @@ class ManagerSeeder extends Seeder
         $marketingManager->employeeSalaries()->create($salaryData);
         $backendManager->employeeSalaries()->create($salaryData);
         $frontendManager->employeeSalaries()->create($salaryData);
+
+        
     }
 }
