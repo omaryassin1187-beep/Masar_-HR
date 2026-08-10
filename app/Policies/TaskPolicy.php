@@ -94,6 +94,11 @@ class TaskPolicy
         return true;
     }
 
+    public function viewDepartmentTasksByEmployee(User $user): bool
+{
+    return $user->hasRole('manager');
+}
+
     public function cancel(User $user, Task $task): bool
     {
         // ✅ Manager can only cancel their own tasks
@@ -120,8 +125,28 @@ class TaskPolicy
     }
 
     /**
-     * ✅ دالة مساعدة للحصول على رسالة الخطأ لكل دالة
+     * ✅ Check if the user can view department completed tasks count.
      */
+    public function viewDepartmentCompletedTasksCount(User $user): bool
+    {
+        return $user->hasRole('manager') && !is_null($user->dep_id);
+    }
+
+    /* -------------------- Error Message Helpers -------------------- */
+
+    public function getDepartmentCompletedTasksCountErrorMessage(User $user): string
+    {
+        if (!$user->hasRole('manager')) {
+            return 'Only managers can view department completed tasks count.';
+        }
+
+        if (is_null($user->dep_id)) {
+            return 'Manager has no assigned department.';
+        }
+
+        return 'You are not authorized to view department completed tasks count.';
+    }
+
     public function getSubmitErrorMessage(User $user, Task $task): string
     {
         if ($task->assigned_to !== $user->id) {
@@ -214,6 +239,4 @@ class TaskPolicy
             default => 'Cannot review this task.',
         };
     }
-
-
 }

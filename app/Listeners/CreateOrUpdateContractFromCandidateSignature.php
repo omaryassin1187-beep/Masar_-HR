@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\CandidateSignedContract;
+use App\Models\Candidate;
 use App\Models\Contract;
 use App\Models\Setting;
 use App\Models\User;
@@ -36,9 +37,11 @@ class CreateOrUpdateContractFromCandidateSignature
                 return $existing;
             }
 
-            $candidate = $offer->candidate;
+           $candidate  = $offer->candidate;
+            $jobPosting = $offer->jobPosting;
 
-            $depId = $offer->jobPosting?->requisition?->department_id;
+            $depId    = $jobPosting?->requisition?->department_id;
+            $jobTitle = $jobPosting?->job_title;
 
             $user = User::firstOrCreate(
                 ['email' => $candidate->email],
@@ -46,6 +49,7 @@ class CreateOrUpdateContractFromCandidateSignature
                     'full_name'      => $candidate->full_name,
                     'dep_id' => $depId,
                     'status'         => 'inactive',
+                    'job_title'      => $jobTitle,
                     'is_first_login' => true,
                     'password'       => null,
                 ]
@@ -72,6 +76,12 @@ class CreateOrUpdateContractFromCandidateSignature
                 'status'                   => Contract::STATUS_AWAITING_HR_SIGNATURE,
             ]);
 
+            $user->leaveBalance()->create(['leave_type' => 'annual', 'used_days' => 0, 'total_days' => $settings->annual_leave_days]);
+            $user->leaveBalance()->create(['leave_type' => 'sick', 'used_days' => 0, 'total_days' => $settings->sick_leave_days]);
+            $user->leaveBalance()->create(['leave_type' => 'unpaid', 'used_days' => 0, 'total_days' => null]);
+
+            $candidate->update(['status' => Candidate::STATUS_HIRED]);
+
             $user->employeeSalaries()
                 ->firstOrCreate(
                     ['effective_from' => $contract->start_date],
@@ -81,6 +91,7 @@ class CreateOrUpdateContractFromCandidateSignature
                         'effective_to'   => $contract->end_date,
                     ]
                 );
+
 
             return $contract;
         });

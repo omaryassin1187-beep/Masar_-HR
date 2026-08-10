@@ -2,11 +2,14 @@
 
 namespace App\Services\Task;
 
+use App\Http\Resources\Task\TaskResource;
 use App\Models\Task;
+use App\Models\User;
 use App\Notifications\Task\TaskAssignedNotification;
 use App\Notifications\Task\TaskCancelledNotification;
 use App\Notifications\Task\TaskUpdatedNotification;
 use App\Services\Task\Concerns\NotifiesSafely;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class TaskService
@@ -107,5 +110,54 @@ class TaskService
 
         return $task;
     }
+
+    public function getDepartmentCompletedTasksCountThisMonth(int $departmentId): int
+{
+    // 1. جلب معرّفات موظفي القسم
+    $employeeIds = User::role('employee')
+        ->where('dep_id', $departmentId)
+        ->pluck('id')
+        ->toArray();
+
+    if (empty($employeeIds)) {
+        return 0;
+    }
+
+    // 2. تحديد حدود الشهر الحالي
+    $startOfMonth = Carbon::now()->startOfMonth();
+    $endOfMonth   = Carbon::now()->endOfMonth();
+
+    // 3. حساب المهام المعتمدة المراجعة خلال هذا الشهر
+    return Task::query()
+        ->whereIn('assigned_to', $employeeIds)
+        ->where('status', Task::STATUS_APPROVED)
+        ->whereBetween('reviewed_at', [$startOfMonth, $endOfMonth])
+        ->count();
+}
+public function getEmployeeTasks(int $employeeId, int $managerDepId): \Illuminate\Support\Collection
+{
+    $employee = User::role('employee')
+        ->where('id', $employeeId)
+        ->where('dep_id', $managerDepId)
+        ->first();
+
+    if (!$employee) {
+        throw new \InvalidArgumentException('Employee not found or does not belong to your department.');
+    }
+
+    $tasks = Task::query()
+        ->where('assigned_to', $employee->id)
+        ->with(['creator', 'reviewer'])
+        ->latest()
+        ->get();
+
+    return collect([
+        'employee_id' => $employee->id,
+        'full_name'   => $employee->full_name,
+        'job_title'   => $employee->job_title,
+        'tasks_count' => $tasks->count(),
+        'tasks'       => TaskResource::collection($tasks),
+    ]);
+}
 
 }

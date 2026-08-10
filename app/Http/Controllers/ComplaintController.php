@@ -81,7 +81,6 @@ public function myComplaints(): JsonResponse
         ]);
     }
 
-    // POST /complaints/{complaint}/respond — HR only, resolves the complaint
     public function respond(ComplaintRespondRequest $request, Complaint $complaint): JsonResponse
     {
         $complaint = $this->service->respond($complaint, $request->validated(), $request->user());
@@ -90,6 +89,27 @@ public function myComplaints(): JsonResponse
             'message' => 'HR response recorded and complaint resolved.',
             'data' => new ComplaintResource($complaint),
         ]);
+    }
+
+
+    public function getComplaintsStats(): JsonResponse
+    {
+        $total = Complaint::count();
+        $pending = Complaint::pending()->count();
+        $underReview = Complaint::underReview()->count();
+        $resolved = Complaint::where('status', Complaint::STATUS_RESOLVED)->count();
+        $rejected = Complaint::where('status', Complaint::STATUS_REJECTED)->count();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'total' => $total,
+                'pending' => $pending,
+                'under_review' => $underReview,
+                'resolved' => $resolved,
+                'rejected' => $rejected,
+            ]
+        ], 200);
     }
 
 }

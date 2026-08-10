@@ -12,7 +12,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use App\Policies\TaskPolicy;
-
+use Illuminate\Http\JsonResponse;
 
 class TaskController extends Controller
 {
@@ -116,4 +116,55 @@ public function index(Request $request)
             ], 422);
         }
     }
+
+    public function getCompletedTasksCountThisMonth(Request $request): JsonResponse
+{
+    try {
+        $this->authorize('viewDepartmentCompletedTasksCount', Task::class);
+
+        $count = $this->taskService->getDepartmentCompletedTasksCountThisMonth($request->user()->dep_id);
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'completed_tasks_count' => $count,
+                'month'                 => now()->translatedFormat('F Y'),
+            ],
+        ], 200);
+
+    } catch (AuthorizationException $e) {
+        $policy = new TaskPolicy();
+
+        return response()->json([
+            'success' => false,
+            'message' => $policy->getDepartmentCompletedTasksCountErrorMessage($request->user()),
+        ], 403);
+    }
+}
+
+public function getEmployeeTasks(Request $request, int $employeeId): JsonResponse
+{
+    try {
+        $this->authorize('viewDepartmentTasksByEmployee', Task::class);
+
+        $data = $this->taskService->getEmployeeTasks($employeeId, $request->user()->dep_id);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+        ], 200);
+
+    } catch (AuthorizationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'ليس لديك صلاحية لعرض مهام موظفي هذا القسم.',
+        ], 403);
+
+    } catch (\InvalidArgumentException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 404);
+    }
+}
 }

@@ -36,6 +36,8 @@ class User extends Authenticatable
         'email',
         'password',
         'dep_id',
+        'job_title',
+        'hire_date',
         'status',
         'is_first_login',
         'onboarding_completed_at',
@@ -112,35 +114,35 @@ class User extends Authenticatable
     }
 
     public function tasksAssigned(): HasMany
-{
-    return $this->hasMany(Task::class, 'assigned_to');
-}
+    {
+        return $this->hasMany(Task::class, 'assigned_to');
+    }
 
-public function tasksCreated(): HasMany
-{
-    return $this->hasMany(Task::class, 'created_by');
-}
+    public function tasksCreated(): HasMany
+    {
+        return $this->hasMany(Task::class, 'created_by');
+    }
 
-public function tasksReviewed(): HasMany
-{
-    return $this->hasMany(Task::class, 'reviewed_by');
-}
+    public function tasksReviewed(): HasMany
+    {
+        return $this->hasMany(Task::class, 'reviewed_by');
+    }
 
-public function taskSubmissions(): HasMany
-{
-    return $this->hasMany(TaskSubmission::class, 'submitted_by');
-}
+    public function taskSubmissions(): HasMany
+    {
+        return $this->hasMany(TaskSubmission::class, 'submitted_by');
+    }
 
 
-public function notesReceived(): HasMany
-{
-    return $this->hasMany(EmployeeNote::class, 'user_id');
-}
+    public function notesReceived(): HasMany
+    {
+        return $this->hasMany(EmployeeNote::class, 'user_id');
+    }
 
-public function notesAuthored(): HasMany
-{
-    return $this->hasMany(EmployeeNote::class, 'author_id');
-}
+    public function notesAuthored(): HasMany
+    {
+        return $this->hasMany(EmployeeNote::class, 'author_id');
+    }
     public function employeeSalaries()
     {
         return $this->hasMany(EmployeeSalaries::class);

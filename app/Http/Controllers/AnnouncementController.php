@@ -105,4 +105,24 @@ public function index(Request $request): AnonymousResourceCollection
 
     return new AnnouncementResource($announcement->load(['author', 'department']));
 }
+
+
+
+public function getAnnouncementsStats(): JsonResponse
+    {
+        $total = Announcement::count();
+        $active = Announcement::active()->count();
+        $highPriority = Announcement::where('priority', Announcement::PRIORITY_HIGH)->count();
+        $expired = Announcement::where('status', Announcement::STATUS_EXPIRED)->count();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'total' => $total,
+                'active' => $active,
+                'high_priority' => $highPriority,
+                'expired' => $expired,
+            ]
+        ], 200);
+    }
 }
