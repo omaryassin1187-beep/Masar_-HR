@@ -144,7 +144,6 @@ class AttendanceController extends Controller
             ->whereMonth('date', now()->month)
             ->whereYear('date', now()->year)
             ->orderBy('date')
-            ->orderBy('check_in')
             ->get();
     }
 
@@ -180,5 +179,33 @@ class AttendanceController extends Controller
         return response()->json([
             'data' => $attendances->get()
         ], 200);
+    }
+
+    public function getMonthlyAttendancePercentage()
+    {
+        $attendances = Attendance::query()
+            ->whereMonth('date', now()->month)
+            ->whereYear('date', now()->year)
+            ->get();
+
+        $total = $attendances->count();
+
+        if ($total === 0) {
+            return [
+                'present_percentage' => 0,
+                'absent_percentage' => 0,
+                'late_percentage' => 0,
+            ];
+        }
+
+        $present = $attendances->where('status', 'present')->count();
+        $absent = $attendances->where('status', 'absent')->count();
+        $late = $attendances->where('status', 'late')->count();
+
+        return [
+            'present_percentage' => round(($present / $total) * 100, 2),
+            'absent_percentage' => round(($absent / $total) * 100, 2),
+            'late_percentage' => round(($late / $total) * 100, 2),
+        ];
     }
 }

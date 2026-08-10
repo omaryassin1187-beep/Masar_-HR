@@ -45,14 +45,14 @@ class EmployeeSeeder extends Seeder
 
         ]);
 
-        $employeeMarketing = User::create([
+        $employeeMarketing2 = User::create([
             'full_name' => 'employeeMarketing',
             'email' => 'employee33@gmail.com',
             'dep_id' => 3,
             'password' => Hash::make('11111111'),
         ]);
-        $employeeMarketing->assignRole('employee');
-        $employeeMarketing->leaveBalance()->createMany([
+        $employeeMarketing2->assignRole('employee');
+        $employeeMarketing2->leaveBalance()->createMany([
 
             [
                 'leave_type' => 'annual',
@@ -74,14 +74,14 @@ class EmployeeSeeder extends Seeder
 
         ]);
 
-        $employeeMarketing = User::create([
+        $employeeMarketing3 = User::create([
             'full_name' => 'employeeMarketing',
             'email' => 'employee36@gmail.com',
             'dep_id' => 3,
             'password' => Hash::make('11111111'),
         ]);
-        $employeeMarketing->assignRole('employee');
-        $employeeMarketing->leaveBalance()->createMany([
+        $employeeMarketing3->assignRole('employee');
+        $employeeMarketing3->leaveBalance()->createMany([
 
             [
                 'leave_type' => 'annual',
@@ -101,15 +101,15 @@ class EmployeeSeeder extends Seeder
                 'total_days' => null
             ],
 
-        ]); $employeeMarketing = User::create([
+        ]);
+        $employeeMarketing4 = User::create([
             'full_name' => 'employeeMarketing',
-            'email' => 'employee377@gmail.com',
+            'email' => 'employee113@gmail.com',
             'dep_id' => 3,
             'password' => Hash::make('11111111'),
-            'Job_title' => 'Marketing Specialist',
         ]);
-        $employeeMarketing->assignRole('employee');
-        $employeeMarketing->leaveBalance()->createMany([
+        $employeeMarketing4->assignRole('employee');
+        $employeeMarketing4->leaveBalance()->createMany([
 
             [
                 'leave_type' => 'annual',
@@ -192,15 +192,15 @@ class EmployeeSeeder extends Seeder
 
         ]);
 
-          $employeeFront = User::create([
+        $employeeFront1 = User::create([
             'full_name' => 'employeeFront',
             'email' => 'employee55@gmail.com',
             'dep_id' => 5,
             'password' => Hash::make('11111111'),
 
         ]);
-        $employeeFront->assignRole('employee');
-        $employeeFront->leaveBalance()->createMany([
+        $employeeFront1->assignRole('employee');
+        $employeeFront1->leaveBalance()->createMany([
 
             [
                 'leave_type' => 'annual',
@@ -230,7 +230,13 @@ class EmployeeSeeder extends Seeder
         ];
 
         $employeeMarketing->employeeSalaries()->create($salaryData);
+        $employeeMarketing2->employeeSalaries()->create($salaryData);
+        $employeeMarketing3->employeeSalaries()->create($salaryData);
+        $employeeMarketing4->employeeSalaries()->create($salaryData);
         $employeeBack->employeeSalaries()->create($salaryData);
         $employeeFront->employeeSalaries()->create($salaryData);
+        $employeeFront1->employeeSalaries()->create($salaryData);
+
+        
     }
 }

@@ -34,7 +34,6 @@ class StoreInterviewRequest extends FormRequest
         return [
             'scheduled_at.after' => 'The interview date must be in the future.',
             'candidate_id.exists' => 'Candidate not found.',
-            'interviewed_by.exists' => 'The specified interviewer does not exist.',
             'location_type.in' => 'Location type must be online or on_site.',
             'location_details.required' => 'Please provide a location or link.',
         ];

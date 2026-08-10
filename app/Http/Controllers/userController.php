@@ -8,6 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Resources\UserResource;
+use App\Mail\ResetPasswordMail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class userController extends Controller
 {
@@ -35,6 +39,72 @@ class userController extends Controller
             'message' => 'Password set successfully.',
         ], 200);
     }
+
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ]);
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'If your email exists, a password reset link has been sent.',
+            ]);
+        }
+
+        // إنشاء Reset Token
+        $token = Password::createToken($user);
+
+        // إرسال الإيميل
+        Mail::to($user->email)->send(
+            new ResetPasswordMail($user, $token)
+        );
+        return response()->json([
+            'message' => 'Password reset link has been sent successfully.',
+        ]);
+    }
+
+    public function showResetForm(Request $request)
+    {
+        return view('auth.reset_password', [
+            'token' => $request->token,
+            'email' => $request->email,
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => ['required'],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'confirmed', 'min:8'],
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+
+            function ($user, $password) {
+
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                    'remember_token' => Str::random(60),
+                ])->save();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+
+            return view('auth.password-reset-success');
+        }
+
+        return back()
+            ->withInput($request->only('email'))
+            ->withErrors([
+                'email' => __($status),
+            ]);
+    }
+
     public function login(Request $request)
     {
         $request->validate([

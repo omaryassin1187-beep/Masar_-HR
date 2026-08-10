@@ -50,5 +50,6 @@ class AdminSeeder extends Seeder
         ];
 
         $admin->employeeSalaries()->create($salaryData);
+        
     }
 }
