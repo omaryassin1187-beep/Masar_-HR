@@ -29,10 +29,7 @@ class EmployeeOnboardingService
                 'status'           => 'inactive',
                 'is_first_login'   => true,
             ]);
-            dd([
-    'model_attribute' => $user->job_title,
-    'db_value' => DB::table('users')->where('id', $user->id)->value('job_title')
-]);
+
             $user->assignRole('employee');
             $startDate = Carbon::parse($offer->start_date);
             Contract::create([
