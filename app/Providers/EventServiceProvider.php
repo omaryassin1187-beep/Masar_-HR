@@ -7,8 +7,10 @@ use App\Events\HrRejectedContract;
 use App\Events\HrRequestedResignature;
 use App\Events\HrSignedContract;
 use App\Events\OfferAccepted;
+use App\Events\TerminationApproved;
 use App\Listeners\CompleteContractAfterHrSignature;
 use App\Listeners\CreateOrUpdateContractFromCandidateSignature;
+use App\Listeners\ExecuteTermination;
 use App\Listeners\NotifyCandidateOfContractRejection;
 use App\Listeners\ResendSignatureRequestToCandidate;
 use App\Listeners\SendSignatureRequestToCandidate;
@@ -28,9 +30,12 @@ class EventServiceProvider extends ServiceProvider
             ResendSignatureRequestToCandidate::class,
         ],
         HrSignedContract::class => [
-    CompleteContractAfterHrSignature::class,
-],
+            CompleteContractAfterHrSignature::class,
+        ],
+        TerminationApproved::class => [
+            ExecuteTermination::class,
 
+        ],
     ];
     public function register(): void
     {

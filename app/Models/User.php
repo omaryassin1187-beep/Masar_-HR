@@ -13,6 +13,7 @@ use App\Models\Salary\Employee_salaries;
 use App\Models\Salary\EmployeeSalaries;
 use App\Models\Salary\Incentive;
 use App\Models\Salary\OverTime;
+use App\Models\Termination\TerminationRequest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -112,35 +113,35 @@ class User extends Authenticatable
     }
 
     public function tasksAssigned(): HasMany
-{
-    return $this->hasMany(Task::class, 'assigned_to');
-}
+    {
+        return $this->hasMany(Task::class, 'assigned_to');
+    }
 
-public function tasksCreated(): HasMany
-{
-    return $this->hasMany(Task::class, 'created_by');
-}
+    public function tasksCreated(): HasMany
+    {
+        return $this->hasMany(Task::class, 'created_by');
+    }
 
-public function tasksReviewed(): HasMany
-{
-    return $this->hasMany(Task::class, 'reviewed_by');
-}
+    public function tasksReviewed(): HasMany
+    {
+        return $this->hasMany(Task::class, 'reviewed_by');
+    }
 
-public function taskSubmissions(): HasMany
-{
-    return $this->hasMany(TaskSubmission::class, 'submitted_by');
-}
+    public function taskSubmissions(): HasMany
+    {
+        return $this->hasMany(TaskSubmission::class, 'submitted_by');
+    }
 
 
-public function notesReceived(): HasMany
-{
-    return $this->hasMany(EmployeeNote::class, 'user_id');
-}
+    public function notesReceived(): HasMany
+    {
+        return $this->hasMany(EmployeeNote::class, 'user_id');
+    }
 
-public function notesAuthored(): HasMany
-{
-    return $this->hasMany(EmployeeNote::class, 'author_id');
-}
+    public function notesAuthored(): HasMany
+    {
+        return $this->hasMany(EmployeeNote::class, 'author_id');
+    }
     public function employeeSalaries()
     {
         return $this->hasMany(EmployeeSalaries::class);
@@ -154,5 +155,10 @@ public function notesAuthored(): HasMany
     public function incentives()
     {
         return $this->hasMany(Incentive::class);
+    }
+
+    public function terminationRequest()
+    {
+        return $this->hasOne(TerminationRequest::class, 'user_id');
     }
 }
