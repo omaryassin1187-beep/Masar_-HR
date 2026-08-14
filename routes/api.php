@@ -32,6 +32,7 @@ use App\Http\Controllers\SkillController;
 use App\Http\Controllers\Task\TaskController;
 use App\Http\Controllers\Task\TaskReviewController;
 use App\Http\Controllers\Task\TaskSubmissionController;
+use App\Http\Controllers\Termination\TerminationRequestsController;
 use App\Http\Controllers\userController;
 
 Route::post('putPassword', [UserController::class, 'putUserPassword']);
@@ -291,6 +292,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('evaluations/{evaluation}', [PerformanceEvaluationController::class, 'show']);
             Route::post('evaluations/{evaluation}/submit-assessment', [PerformanceEvaluationController::class, 'submitAssessment']);
             Route::post('evaluations/{evaluation}/hr-approve', [PerformanceEvaluationController::class, 'hrApprove']);
+
+            Route::post('store-termination', [TerminationRequestsController::class, 'store']);
+            Route::delete('termination-requests/{id}',[TerminationRequestsController::class, 'destroy']);
+            Route::get('my-termination-requests',[TerminationRequestsController::class, 'myRequests']);
+
         }
     );
     //---------------Employee routes-------------
@@ -331,6 +337,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('current-month-payslips', [PayslipsController::class, 'current']);
         Route::get('summary-payslips', [PayslipsController::class, 'summary']);
+
+        Route::get('termination-requests/{id}',[TerminationRequestsController::class, 'show']);
+        Route::get('termination-requests',[TerminationRequestsController::class, 'requestsToApprove']);
+        Route::put('approve/{id}/termination',[TerminationRequestsController::class, 'approve']);
+        Route::put('reject/{id}/termination',[TerminationRequestsController::class, 'reject']);
     });
 });
 

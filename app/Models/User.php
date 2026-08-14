@@ -13,6 +13,7 @@ use App\Models\Salary\Employee_salaries;
 use App\Models\Salary\EmployeeSalaries;
 use App\Models\Salary\Incentive;
 use App\Models\Salary\OverTime;
+use App\Models\Termination\TerminationRequest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -156,5 +157,10 @@ class User extends Authenticatable
     public function incentives()
     {
         return $this->hasMany(Incentive::class);
+    }
+
+    public function terminationRequest()
+    {
+        return $this->hasOne(TerminationRequest::class, 'user_id');
     }
 }

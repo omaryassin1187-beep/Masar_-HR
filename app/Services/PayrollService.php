@@ -18,7 +18,8 @@ use App\Notifications\Payroll\PayrollGeneratedNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-
+use Illuminate\Support\Facades\Mail;
+use App\Mail\PayslipMail;
 class PayrollService
 {
     public function __construct(
@@ -75,14 +76,17 @@ class PayrollService
         ];
 
         $errors = array_merge($errors, $this->validateEmployeesHaveSalary());
-       // $errors = array_merge($errors, $this->validateAttendance($payroll));
+        // $errors = array_merge($errors, $this->validateAttendance($payroll));
         $errors = array_merge($errors, $this->validatePendingLeaves());
         $errors = array_merge($errors, $this->validatePendingOvertime());
+
+        $total_salaries = $this->totalSalary($payroll);
 
         return [
             'ready'   => empty($errors),
             'summary' => $summary,
             'errors'  => $errors,
+            'total salaries'  => $total_salaries
         ];
     }
 
@@ -300,8 +304,15 @@ class PayrollService
 
     private function eligibleEmployees(Payroll $payroll): Collection
     {
+        [$periodStart, $periodEnd] = $this->payslipsService
+            ->payrollPeriod($payroll);
+
         return User::query()
             ->where('status', 'active')
+            ->orWhereHas('contracts', function ($query) use ($periodStart, $periodEnd) {
+                $query->whereDate('end_date', '>=', $periodStart)
+                    ->whereDate('end_date', '<=', $periodEnd);
+            })
             ->get();
     }
 
@@ -310,9 +321,71 @@ class PayrollService
         $payroll->load('payslips.user');
 
         foreach ($payroll->payslips as $payslip) {
+
             $payslip->user->notify(
                 new PayrollGeneratedNotification($payslip)
             );
+
+            Mail::to($payslip->user->email)->send(
+                new PayslipMail($payslip)
+            );
         }
+    }
+
+    public function totalSalary(Payroll $payroll): float
+    {
+        $employees = $this->eligibleEmployees($payroll);
+
+        $total = 0;
+
+        foreach ($employees as $employee) {
+
+            $hourlyRate = $this->payslipsService->hourlyRate(
+                $employee,
+                $payroll
+            );
+
+            $workingHoursPerDay = $this->payslipsService->WorkingHoursPerDay();
+
+            $workingDays = $this->payslipsService->workingDays(
+                $employee,
+                $payroll
+            );
+
+            $baseSalary = $hourlyRate
+                * $workingHoursPerDay
+                * $workingDays;
+
+            $overtime = $this->payslipsService->OvertimeAmount(
+                $employee,
+                $payroll
+            );
+
+            $incentives = $this->payslipsService->incentiveAmount(
+                $employee,
+                $payroll
+            );
+
+            $deductions = $this->payslipsService->deductionsAmount(
+                $employee,
+                $payroll
+            );
+
+            $unpaidLeaves = $this->payslipsService->unpaidLeaves(
+                $employee,
+                $payroll,
+                $hourlyRate,
+                $workingHoursPerDay
+            );
+
+            $total +=
+                $baseSalary
+                + $overtime
+                + $incentives
+                - $deductions
+                - $unpaidLeaves['amount'];
+        }
+
+        return $total;
     }
 }

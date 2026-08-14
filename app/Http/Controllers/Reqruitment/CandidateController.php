@@ -134,7 +134,7 @@ class CandidateController extends Controller
                 'full_name' => $candidate->full_name,
                 'email' => $candidate->email,
                 'experience' => $candidate->experience,
-                'cv_path' => $candidate->cv_path,
+                'cv_url' => $candidate->cv_url,
                 'cover_letter' => $candidate->cover_letter,
                 'more_skill' => $candidate->more_skill,
             ],
