@@ -157,4 +157,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Incentive::class);
     }
+
+    public function resignations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Resignation::class);
+    }
 }
