@@ -9,7 +9,7 @@ class ClassifyResignationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('classify', $this->route('resignation'));
+        return true;
     }
 
     public function rules(): array

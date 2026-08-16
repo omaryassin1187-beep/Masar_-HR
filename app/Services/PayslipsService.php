@@ -107,7 +107,7 @@ class PayslipsService
         ]);
     }
 
-    private function payrollPeriod(Payroll $payroll): array
+    public function payrollPeriod(Payroll $payroll): array
     {
         return [
             Carbon::create($payroll->year, $payroll->month)->startOfMonth(),
@@ -115,7 +115,7 @@ class PayslipsService
         ];
     }
 
-    private function hourlyRate(User $employee, Payroll $payroll): float
+    public function hourlyRate(User $employee, Payroll $payroll): float
     {
         [$periodStart, $periodEnd] = $this->payrollPeriod($payroll);
 
@@ -132,7 +132,7 @@ class PayslipsService
         return (float) $salary->hour_price;
     }
 
-    private function workingHoursPerDay(): int
+    public function workingHoursPerDay(): int
     {
         $setting = Setting::instance();
 
@@ -149,12 +149,12 @@ class PayslipsService
         return $checkIn->diffInHours($checkOut);
     }
 
-    private function workingDays(
+    public function workingDays(
         User $employee,
         Payroll $payroll
     ): int {
 
-        $contract = $this->activeContract($employee);
+        $contract = $this->contractForPayroll($employee, $payroll);
 
         [$periodStart, $periodEnd] = $this->payrollPeriod($payroll);
 
@@ -186,7 +186,7 @@ class PayslipsService
         return $workingDays;
     }
 
-    private function overtimeAmount(
+    public function overtimeAmount(
         User $employee,
         Payroll $payroll
     ): float {
@@ -199,7 +199,7 @@ class PayslipsService
             ->sum('amount');
     }
 
-    private function incentiveAmount(
+    public function incentiveAmount(
         User $employee,
         Payroll $payroll
     ): float {
@@ -211,7 +211,7 @@ class PayslipsService
             ->sum('amount');
     }
 
-    private function deductionsAmount(
+    public function deductionsAmount(
         User $employee,
         Payroll $payroll
     ): float {
@@ -223,7 +223,7 @@ class PayslipsService
             ->sum('amount');
     }
 
-    private function unpaidLeaves(
+    public function unpaidLeaves(
         User $employee,
         Payroll $payroll,
         float $hourlyRate,
@@ -270,7 +270,7 @@ class PayslipsService
         ];
     }
 
-    private function baseSalary(
+    public function baseSalary(
         float $hourlyRate,
         int $workingHoursPerDay,
         int $workingDays
@@ -280,7 +280,7 @@ class PayslipsService
             * $workingDays;
     }
 
-    private function grossSalary(
+    public function grossSalary(
         float $baseSalary,
         float $overtimeAmount,
         float $incentiveAmount
@@ -290,7 +290,7 @@ class PayslipsService
             + $incentiveAmount;
     }
 
-    private function netSalary(
+    public function netSalary(
         float $grossSalary,
         float $deductionsAmount,
         float $unpaidLeaveAmount
@@ -300,14 +300,21 @@ class PayslipsService
             - $unpaidLeaveAmount;
     }
 
-    private function activeContract(User $employee): Contract
+    private function contractForPayroll(User $employee, Payroll $payroll): Contract
     {
+        [$periodStart, $periodEnd] = $this->payrollPeriod($payroll);
+
         $contract = $employee->contracts()
-            ->where('status', 'active')
+            ->whereDate('start_date', '<=', $periodEnd)
+            ->where(function ($query) use ($periodStart) {
+                $query->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $periodStart);
+            })
+            ->latest('start_date')
             ->first();
 
-        if (! $contract) {
-            throw new Exception("Employee {$employee->id} does not have an active contract.");
+        if (!$contract) {
+            throw new Exception("No contract found for employee {$employee->id} covering payroll period.");
         }
 
         return $contract;

@@ -19,6 +19,7 @@ class PayrollResource extends JsonResource
             'month' => $this->month,
             'year' => $this->year,
             'status' => $this->status,
+            'total_salary' => (float) $this->payslips()->sum('net_salary'),
         ];
     }
 }

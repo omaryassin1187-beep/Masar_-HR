@@ -35,7 +35,6 @@ class Document extends Model
         'type',
         'file_name',
         'file_path',
-        'original_name',
     ];
 
 

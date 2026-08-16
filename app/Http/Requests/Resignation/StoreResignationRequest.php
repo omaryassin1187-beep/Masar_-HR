@@ -9,7 +9,7 @@ class StoreResignationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('create', Resignation::class);
+        return true;
     }
 
     public function rules(): array

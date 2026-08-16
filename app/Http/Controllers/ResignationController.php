@@ -1,20 +1,21 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Exceptions\ResignationException;
 use App\Http\Requests\Resignation\ClassifyResignationRequest;
-use App\Http\Requests\Resignation\ReassignTasksRequest;
 use App\Http\Requests\Resignation\StoreResignationRequest;
 use App\Http\Resources\Resignation\ResignationResource;
+use App\Models\Document;
 use App\Models\Resignation;
 use App\Services\ResignationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Storage;
 
 class ResignationController extends Controller
 {
-            use AuthorizesRequests;
+    use AuthorizesRequests;
 
     public function __construct(private ResignationService $service) {}
 
@@ -32,26 +33,50 @@ class ResignationController extends Controller
         return ResignationResource::collection($resignations);
     }
 
-    public function tasksToReassign(Resignation $resignation): JsonResponse
+    /**
+     * عرض تفاصيل طلب استقالة واحد كاملة، متضمنة المستندات المرفقة.
+     */
+    public function show(int $resignation): ResignationResource
     {
-        // الصلاحية تُفحص عبر Form Request أو Policy Middleware إن وُجد
-        $tasks = $this->service->getOpenTasksForResignation($resignation);
+        $resignationModel = Resignation::with([
+            'employee',
+            'classifiedBy',
+            'settlement',
+            'documents',
+        ])->find($resignation);
 
-        return response()->json($tasks);
+        if (! $resignationModel) {
+            throw ResignationException::notFound();
+        }
+
+        $this->authorize('view', $resignationModel);
+
+        return new ResignationResource($resignationModel);
     }
 
-    public function reassignTasks(ReassignTasksRequest $request, Resignation $resignation): JsonResponse
+    public function downloadDocument(int $resignation, int $document)
     {
-        $this->service->reassignTasks(
-            $request->user(),
-            $resignation,
-            $request->validated()['task_ids']
-        );
+        $resignationModel = Resignation::find($resignation);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Tasks reassigned successfully.',
-        ]);
+        if (! $resignationModel) {
+            throw ResignationException::notFound();
+        }
+
+        $this->authorize('view', $resignationModel);
+
+        $documentModel = Document::where('id', $document)
+            ->where('owner_type', Resignation::class)
+            ->where('owner_id', $resignationModel->id)
+            ->first();
+
+        if (! $documentModel || ! Storage::disk('private')->exists($documentModel->file_path)) {
+            throw ResignationException::documentNotFound();
+        }
+
+        return Storage::disk('private')->download(
+            $documentModel->file_path,
+            $documentModel->file_name
+        );
     }
 
     public function index(Request $request): AnonymousResourceCollection
@@ -63,14 +88,16 @@ class ResignationController extends Controller
         );
     }
 
-    public function classify(ClassifyResignationRequest $request, Resignation $resignation): ResignationResource
-    {
-        $resignation = $this->service->classify(
-            $request->user(),
-            $resignation,
-            $request->validated()
-        );
+   public function classify(ClassifyResignationRequest $request, Resignation $resignation): ResignationResource
+{
+    $this->authorize('classify', $resignation);
 
-        return new ResignationResource($resignation);
-    }
+    $updatedResignation = $this->service->classify(
+        $request->user(),
+        $resignation,
+        $request->validated()
+    );
+
+    return new ResignationResource($updatedResignation);
+}
 }

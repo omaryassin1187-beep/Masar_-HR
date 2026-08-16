@@ -119,18 +119,21 @@ class EvaluationService
         return $evaluation->fresh();
     }
 
-    public function getDepartmentQuarterlyPerformance(int $departmentId, int $quartersCount = 4): array
+public function getDepartmentQuarterlyPerformance(int $departmentId, int $quartersCount = 4): array
 {
+    $quartersList = $this->buildRecentQuartersList($quartersCount);
+
     $employeeIds = User::role('employee')
         ->where('dep_id', $departmentId)
         ->pluck('id')
         ->toArray();
 
     if (empty($employeeIds)) {
-        return [];
+        return array_map(fn ($q) => [
+            'quarter' => $q['label'],
+            'score'   => 0,
+        ], $quartersList);
     }
-
-    $quartersList = $this->buildRecentQuartersList($quartersCount);
 
     $scores = PerformanceEvaluation::query()
         ->whereIn('employee_id', $employeeIds)

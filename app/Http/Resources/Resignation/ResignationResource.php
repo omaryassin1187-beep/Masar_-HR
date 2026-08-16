@@ -48,16 +48,28 @@ class ResignationResource extends JsonResource
             'manager_notified_at'    => $this->manager_notified_at?->toIso8601String(),
             'contract_terminated_at' => $this->contract_terminated_at?->toIso8601String(),
 
-            'payroll_settled'          => $this->payroll_settled,
-            'final_settlement_amount'  => $this->final_settlement_amount,
-
-            'documents' => $this->whenLoaded('documents', fn () =>
-                $this->documents->map(fn ($doc) => [
-                    'id'             => $doc->id,
-                    'original_name'  => $doc->original_name,
-                    'file_path'      => $doc->file_path,
+            'documents' => $this->whenLoaded(
+                'documents',
+                fn() =>
+                $this->documents->map(fn($doc) => [
+                    'id'        => $doc->id,
+                    'file_name' => $doc->file_name,
+                    'file_path' => $doc->file_path,
                 ])
             ),
+
+            'settlement' => $this->whenLoaded('settlement') && $this->settlement
+                ? [
+                    'annual_leave_days'         => $this->settlement->annual_leave_days,
+                    'annual_leave_amount'       => $this->settlement->annual_leave_amount,
+                    'sick_leave_days'           => $this->settlement->sick_leave_days,
+                    'sick_leave_amount'         => $this->settlement->sick_leave_amount,
+                    'notice_period_amount'      => $this->settlement->notice_period_amount,
+                    'end_of_service_gratuity'   => $this->settlement->end_of_service_gratuity,
+                    'total_compensation_amount' => $this->settlement->total_compensation_amount,
+                    'emailed_at'                => $this->settlement->emailed_at?->toIso8601String(),
+                ]
+                : null,
 
             'created_at' => $this->created_at?->toIso8601String(),
         ];

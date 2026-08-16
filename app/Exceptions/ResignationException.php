@@ -3,6 +3,8 @@
 namespace App\Exceptions;
 
 use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ResignationException extends Exception
 {
@@ -16,6 +18,20 @@ class ResignationException extends Exception
     public function getStatusCode(): int
     {
         return $this->statusCode;
+    }
+
+    /**
+     * Laravel يتحقق من وجود هذه الدالة على كلاس الاستثناء نفسه
+     * قبل أي renderable مسجّل بـ bootstrap/app.php — فهذا يضمن
+     * ظهور رسالة الاستثناء الحقيقية دائماً، بغض النظر عن قيمة app.debug،
+     * دون الحاجة لأي تعديل على ملفات الـ app العامة.
+     */
+    public function render(Request $request): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $this->getMessage(),
+        ], $this->statusCode);
     }
 
     public static function activeResignationExists(): self
@@ -56,5 +72,20 @@ class ResignationException extends Exception
     public static function invalidType(): self
     {
         return new self('Invalid resignation type. Must be "immediate" or "with_notice".', 422);
+    }
+
+    public static function noActiveSalary(int $employeeId): self
+    {
+        return new self("No active salary record found for employee ID: {$employeeId}.", 422);
+    }
+
+    public static function payrollCalculationFailed(string $reason): self
+    {
+        return new self("Settlement calculation failed: {$reason}", 422);
+    }
+
+    public static function documentNotFound(): self
+    {
+        return new self('Document not found or does not belong to this resignation request.', 404);
     }
 }

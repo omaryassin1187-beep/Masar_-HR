@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 
 class Candidate extends Model
 {
@@ -102,5 +103,12 @@ class Candidate extends Model
         return $this->skills
             ->whereIn('id', $requiredSkillIds)
             ->values();
+    }
+
+    public function getCvUrlAttribute()
+    {
+        return $this->cv_path
+            ? asset(Storage::url($this->cv_path))
+            : null;
     }
 }

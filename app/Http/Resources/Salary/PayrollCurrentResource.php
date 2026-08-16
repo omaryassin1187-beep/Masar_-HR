@@ -7,23 +7,23 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class PayrollCurrentResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        return  [
-            
-            'payroll' => new PayrollResource($this['payroll']),
+        return [
+            'payroll' => [
+                'id' => $this['payroll']->id,
+                'month' => $this['payroll']->month,
+                'year' => $this['payroll']->year,
+                'status' => $this['payroll']->status,
+            ],
 
             'ready' => $this['ready'],
 
             'summary' => $this['summary'],
 
             'errors' => $this['errors'],
-       
+
+            'total salaries' => $this['total salaries'],
         ];
     }
 }
