@@ -39,8 +39,7 @@ class PerformanceEvaluationPolicy
     }
 
     public function viewDepartmentPerformance(User $user): bool
-{
-    return $user->hasRole('admin');
-}
-
+    {
+        return $user->hasAnyRole(['admin', 'manager', 'HR']);
+    }
 }

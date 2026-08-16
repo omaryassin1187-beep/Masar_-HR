@@ -353,22 +353,55 @@ class userController extends Controller
         ], 200);
     }
 
-public function getNewHiresThisMonth()
-{
-    $startOfMonth = now()->startOfMonth();
-    $endOfMonth   = now()->endOfMonth();
+    public function getNewHiresThisMonth()
+    {
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth   = now()->endOfMonth();
 
-    $query = User::role('employee')
-        ->whereHas('profile', function ($q) use ($startOfMonth, $endOfMonth) {
-            $q->whereBetween('hiring_date', [$startOfMonth, $endOfMonth]);
+        $query = User::role('employee')
+            ->whereHas('profile', function ($q) use ($startOfMonth, $endOfMonth) {
+                $q->whereBetween('hiring_date', [$startOfMonth, $endOfMonth]);
+            });
+
+        $employees = $query->with(['department', 'profile'])->get();
+
+        return response()->json([
+            'status' => true,
+            'count'  => $employees->count(),
+            'data'   => UserResource::collection($employees),
+        ]);
+    }
+
+    public function getAllUsersByRole(): JsonResponse
+    {
+        $roles = ['admin', 'HR', 'manager', 'employee'];
+
+        $users = User::with(['profile', 'department', 'roles'])
+            ->whereHas('roles', fn($q) => $q->whereIn('name', $roles))
+            ->get();
+
+        $grouped = collect($roles)->mapWithKeys(function ($role) use ($users) {
+            $filtered = $users->filter(
+                fn($user) => $user->roles->pluck('name')->contains($role)
+            )->values();
+
+            return [$role => UserResource::collection($filtered)];
         });
 
-    $employees = $query->with(['department', 'profile'])->get();
-
-    return response()->json([
-        'status' => true,
-        'count'  => $employees->count(),
-        'data'   => UserResource::collection($employees),
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'admin'    => $grouped['admin'],
+                'HR'       => $grouped['HR'],
+                'manager'  => $grouped['manager'],
+                'employee' => $grouped['employee'],
+            ],
+            'counts' => [
+                'admin'    => $grouped['admin']->count(),
+                'HR'       => $grouped['HR']->count(),
+                'manager'  => $grouped['manager']->count(),
+                'employee' => $grouped['employee']->count(),
+            ],
+        ]);
+    }
 }

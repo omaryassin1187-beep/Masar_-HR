@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Reqruitment\ContractController;
 use App\Http\Controllers\Reqruitment\OnboardingController;
+use App\Http\Controllers\ResignationController;
 use App\Http\Controllers\Salary\EmployeeSalariesController;
 use App\Http\Controllers\Salary\IncentiveController;
 use App\Http\Controllers\Salary\OverTimeController;
@@ -94,6 +95,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('departments/all', [DepartmentController::class, 'getAllDepartments']);
     Route::get('departments/{depId}/employees', [DepartmentController::class, 'getDepartmentEmployees']);
     Route::get('departments/employees', [DepartmentController::class, 'getEmployeesByDepartment']);
+    Route::get('/dep-performance', [PerformanceEvaluationController::class, 'getDepartmentQuarterlyPerformance']);
 
 
     Route::put('check-in', [AttendanceController::class, 'checkIn']);
@@ -139,7 +141,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/payslips/{id}/download', [PayslipsController::class, 'download']);
     Route::get('/payslips/{id}/preview', [PayslipsController::class, 'preview']);
 
-    Route::get('CV-candidateSkills/{id}/requiedSkills', [CandidateController::class, 'getCandidateCvAndSkills']);//for AI filtering
+    Route::get('CV-candidateSkills/{id}/requiedSkills', [CandidateController::class, 'getCandidateCvAndSkills']); //for AI filtering
 
 
     //---------------manager routes-------------
@@ -178,8 +180,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('my-department-overtime', [OverTimeController::class, 'getMyDepartmentEmployeeOverTimeRequests']);
         Route::put('voluntary-overtime/{id}/approve', [OverTimeController::class, 'approveByManager']);
         Route::put('voluntary-overtime/{id}/reject', [OverTimeController::class, 'rejectByManager']);
-
-        Route::get('/department-performance', [PerformanceEvaluationController::class, 'getDepartmentQuarterlyPerformance']);
     });
 
 
@@ -244,6 +244,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('voluntary-overtime', [OverTimeController::class, 'getAllEmployeeOverTimeRequests']);
 
         Route::apiResource('incentives', IncentiveController::class);
+
+        Route::get('/resignations', [ResignationController::class, 'index']);
+        Route::get('/resignations/{resignation}', [ResignationController::class, 'show']);
+        Route::get('/resignations/{resignation}/documents/{document}/download', [ResignationController::class, 'downloadDocument']);
+        Route::post('/resignations/{resignation}/classify', [ResignationController::class, 'classify']);
     });
 
 
@@ -256,8 +261,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('settings',   [SettingController::class, 'update']);
 
         Route::get('new-hires', [UserController::class, 'getNewHiresThisMonth']);
-
-        Route::get('top-performance', [PerformanceEvaluationController::class, 'getTopPerformers']);
+        Route::get('/by-role-users', [userController::class, 'getAllUsersByRole']);
 
 
         Route::get('payroll/current', [PayrollController::class, 'current']);
@@ -294,9 +298,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('evaluations/{evaluation}/hr-approve', [PerformanceEvaluationController::class, 'hrApprove']);
 
             Route::post('store-termination', [TerminationRequestsController::class, 'store']);
-            Route::delete('termination-requests/{id}',[TerminationRequestsController::class, 'destroy']);
-            Route::get('my-termination-requests',[TerminationRequestsController::class, 'myRequests']);
-
+            Route::delete('termination-requests/{id}', [TerminationRequestsController::class, 'destroy']);
+            Route::get('my-termination-requests', [TerminationRequestsController::class, 'myRequests']);
         }
     );
     //---------------Employee routes-------------
@@ -304,7 +307,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(['role:employee'])->group(function () {
         Route::post('/tasks/{task}/start', [TaskController::class, 'start']);
         Route::post('/tasks/{task}/submit', [TaskSubmissionController::class, 'store']);
+
         Route::get('myevaluations', [PerformanceEvaluationController::class, 'index']);
+
+        Route::post('/resignations', [ResignationController::class, 'store']);
+        Route::get('/resigna/mine', [ResignationController::class, 'mine']);
     });
 
 
@@ -338,10 +345,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('current-month-payslips', [PayslipsController::class, 'current']);
         Route::get('summary-payslips', [PayslipsController::class, 'summary']);
 
-        Route::get('termination-requests/{id}',[TerminationRequestsController::class, 'show']);
-        Route::get('termination-requests',[TerminationRequestsController::class, 'requestsToApprove']);
-        Route::put('approve/{id}/termination',[TerminationRequestsController::class, 'approve']);
-        Route::put('reject/{id}/termination',[TerminationRequestsController::class, 'reject']);
+        Route::get('termination-requests/{id}', [TerminationRequestsController::class, 'show']);
+        Route::get('termination-requests', [TerminationRequestsController::class, 'requestsToApprove']);
+        Route::put('approve/{id}/termination', [TerminationRequestsController::class, 'approve']);
+        Route::put('reject/{id}/termination', [TerminationRequestsController::class, 'reject']);
     });
 });
 

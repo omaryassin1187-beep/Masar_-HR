@@ -16,7 +16,7 @@ return new class extends Migration
             $table->morphs('owner');
             $table->string('file_name');
             $table->string('file_path');
-            $table->enum('type', ['cv', 'id_card', 'photo', 'bank_info', 'professional']);
+            $table->enum('type', ['cv', 'id_card', 'photo', 'bank_info', 'professional' ,'resignation_support']);
             $table->timestamps();
         });
     }
