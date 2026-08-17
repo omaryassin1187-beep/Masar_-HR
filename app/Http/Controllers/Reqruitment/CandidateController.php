@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Smalot\PdfParser\Parser;
+
 class CandidateController extends Controller
 {
     use AuthorizesRequests;
@@ -121,12 +122,24 @@ class CandidateController extends Controller
         //
     }
 
-    public function getCandidateCvAndSkills(int $candidateId)   //for AI filtering
+    public function getCandidateCvAndSkills(int $candidateId)
     {
         $candidate = Candidate::with([
             'jobPosting.requisition.skills',
             'skills',
         ])->findOrFail($candidateId);
+
+        $cvText = null;
+
+        if ($candidate->cv_path) {
+            $parser = new Parser();
+
+            $pdf = $parser->parseFile(
+                Storage::disk('public')->path($candidate->cv_path)
+            );
+
+            $cvText = trim($pdf->getText());
+        }
 
         return [
             'candidate' => [
@@ -134,7 +147,7 @@ class CandidateController extends Controller
                 'full_name' => $candidate->full_name,
                 'email' => $candidate->email,
                 'experience' => $candidate->experience,
-                'cv_url' => $candidate->cv_url,
+                'cv_text' => $cvText,
                 'cover_letter' => $candidate->cover_letter,
                 'more_skill' => $candidate->more_skill,
             ],
@@ -164,7 +177,7 @@ class CandidateController extends Controller
         ];
     }
 
-    
+
 
     public function extractText(Request $request)
     {
