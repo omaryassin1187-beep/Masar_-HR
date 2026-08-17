@@ -33,6 +33,8 @@ return new class extends Migration
             $table->decimal('eval_salary_increase_threshold', 5, 2)->default(95.00);
             $table->unsignedTinyInteger('eval_min_tenure_days')->default(30);
 
+            $table->integer('end_of_service_months_per_year' )->default(1); // شهر أجر واحد عن كل سنة خدمة كاملة (افتراضي)
+
 
             $table->timestamps();
         });

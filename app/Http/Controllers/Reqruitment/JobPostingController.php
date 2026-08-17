@@ -139,4 +139,20 @@ class JobPostingController extends Controller
             'message' => 'Job posting deleted successfully.',
         ]);
     }
+
+    public function getJobPostingsStats(): JsonResponse
+    {
+        $total = JobPosting::count();
+        $open = JobPosting::open()->count();
+        $closed = JobPosting::closed()->count();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'total' => $total,
+                'open' => $open,
+                'closed' => $closed,
+            ]
+        ], 200);
+    }
 }

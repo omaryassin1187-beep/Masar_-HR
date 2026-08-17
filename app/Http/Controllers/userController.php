@@ -312,4 +312,96 @@ class userController extends Controller
             'data' => $sorted,
         ]);
     }
+
+    //عدد الموظفين والمدراء في النظام
+    public function getUsersCount(): JsonResponse
+    {
+        $employeesCount = User::role('employee')->count();
+        $managersCount = User::role('manager')->count();
+        $totalUsers = User::count();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'total_users' => $totalUsers,
+                'employees_count' => $employeesCount,
+                'managers_count' => $managersCount,
+                'others_count' => $totalUsers - ($employeesCount + $managersCount),
+            ]
+        ], 200);
+    }
+
+    //لجلب جميع الموظفين (role = employee)
+    public function getEmployees(): JsonResponse
+    {
+        $employees = User::role('employee')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => UserResource::collection($employees),
+        ], 200);
+    }
+
+    //لجلب جميع المدراء (role = manager)
+    public function getManagers(): JsonResponse
+    {
+        $managers = User::role('manager')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => UserResource::collection($managers),
+        ], 200);
+    }
+
+    public function getNewHiresThisMonth()
+    {
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth   = now()->endOfMonth();
+
+        $query = User::role('employee')
+            ->whereHas('profile', function ($q) use ($startOfMonth, $endOfMonth) {
+                $q->whereBetween('hiring_date', [$startOfMonth, $endOfMonth]);
+            });
+
+        $employees = $query->with(['department', 'profile'])->get();
+
+        return response()->json([
+            'status' => true,
+            'count'  => $employees->count(),
+            'data'   => UserResource::collection($employees),
+        ]);
+    }
+
+    public function getAllUsersByRole(): JsonResponse
+    {
+        $roles = ['admin', 'HR', 'manager', 'employee'];
+
+        $users = User::with(['profile', 'department', 'roles'])
+            ->whereHas('roles', fn($q) => $q->whereIn('name', $roles))
+            ->get();
+
+        $grouped = collect($roles)->mapWithKeys(function ($role) use ($users) {
+            $filtered = $users->filter(
+                fn($user) => $user->roles->pluck('name')->contains($role)
+            )->values();
+
+            return [$role => UserResource::collection($filtered)];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'admin'    => $grouped['admin'],
+                'HR'       => $grouped['HR'],
+                'manager'  => $grouped['manager'],
+                'employee' => $grouped['employee'],
+            ],
+            'counts' => [
+                'admin'    => $grouped['admin']->count(),
+                'HR'       => $grouped['HR']->count(),
+                'manager'  => $grouped['manager']->count(),
+                'employee' => $grouped['employee']->count(),
+            ],
+        ]);
+    }
 }

@@ -69,7 +69,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->renderable(function (HttpException $e, $request) {
             if ($request->expectsJson()) {
                 $statusCode = $e->getStatusCode();
-                
+
                 if ($statusCode === 403) {
                     return response()->json([
                         'success' => false,
@@ -110,10 +110,17 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => config('app.debug') ? $e->getMessage() : 'Something Went Wrong',
                 ];
 
-                
+
 
                 return response()->json($response, $statusCode);
             }
         });
+
+        $exceptions->renderable(function (\App\Exceptions\ResignationException $e, $request) {
+        if ($request->expectsJson()) {
+            return $e->render($request);
+        }
+    });
+
     })
     ->create();

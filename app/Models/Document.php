@@ -11,6 +11,8 @@ class Document extends Model
     const TYPE_PHOTO        = 'photo';        // صورة شخصية
     const TYPE_BANK_INFO    = 'bank_info';    // بيانات بنكية
     const TYPE_PROFESSIONAL = 'professional'; // شهادات مهنية
+    const TYPE_RESIGNATION_SUPPORT = 'resignation_support'; // مستندات داعمة للاستقالة الفورية
+
 
     const REQUIRED_FOR_ONBOARDING = [
         self::TYPE_ID_CARD,
@@ -23,6 +25,8 @@ class Document extends Model
         self::TYPE_PHOTO,
         self::TYPE_BANK_INFO,
         self::TYPE_PROFESSIONAL,
+        self::TYPE_RESIGNATION_SUPPORT,
+
     ];
 
     protected $fillable = [
@@ -31,7 +35,6 @@ class Document extends Model
         'type',
         'file_name',
         'file_path',
-        'original_name',
     ];
 
 

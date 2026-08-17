@@ -20,6 +20,7 @@ class EmployeeSeeder extends Seeder
             'email' => 'employee3@gmail.com',
             'dep_id' => 3,
             'password' => Hash::make('11111111'),
+            'Job_title' => 'Marketing Specialist',
         ]);
         $employeeMarketing->assignRole('employee');
         $employeeMarketing->leaveBalance()->createMany([
@@ -135,6 +136,7 @@ class EmployeeSeeder extends Seeder
             'email' => 'employee4@gmail.com',
             'dep_id' => 4,
             'password' => Hash::make('11111111'),
+            'job_title' => 'Backend Developer'
         ]);
         $employeeBack->assignRole('employee');
         $employeeBack->leaveBalance()->createMany([

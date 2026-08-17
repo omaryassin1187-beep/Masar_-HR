@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reqruitment;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\contract\ContractResource;
+use App\Models\Contract;
 use App\Models\Document;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -16,6 +17,31 @@ use Illuminate\Support\Facades\Storage;
 class ContractController extends Controller
 {
     use AuthorizesRequests;
+
+
+    public function index(Request $request)
+{
+    $contracts = Contract::with([
+            'user:id,full_name,email,dep_id',
+            'user.department:id,name',
+            'offer.jobPosting.requisition:id,job_title',
+        ])
+        ->whereHas('user')
+        ->when($request->status, fn($q, $v) => $q->where('status', $v))
+        ->when($request->department_id, fn($q, $v) =>
+            $q->whereHas('user', fn($u) => $u->where('department_id', $v))
+        )
+        ->when($request->search, fn($q, $v) =>
+            $q->whereHas('user', fn($u) =>
+                $u->where('full_name', 'like', "%{$v}%")
+                  ->orWhere('email', 'like', "%{$v}%")
+            )
+        )
+        ->latest()
+        ->paginate(20);
+
+    return ContractResource::collection($contracts);
+}
 
     public function show(): JsonResponse
     {

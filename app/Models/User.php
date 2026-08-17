@@ -37,6 +37,8 @@ class User extends Authenticatable
         'email',
         'password',
         'dep_id',
+        'job_title',
+        'hire_date',
         'status',
         'is_first_login',
         'onboarding_completed_at',
@@ -156,6 +158,10 @@ class User extends Authenticatable
     {
         return $this->hasMany(Incentive::class);
     }
+
+    public function resignations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Resignation::class);}
 
     public function terminationRequest()
     {
