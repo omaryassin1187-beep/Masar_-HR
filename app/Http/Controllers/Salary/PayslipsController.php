@@ -76,7 +76,7 @@ class PayslipsController extends Controller
                 'payroll',
             ])
             ->where('payroll_id', $payroll->id)
-            ->accessibleBy(auth()->user())
+            //->accessibleBy(auth()->user())
             ->latest()
             ->get();
 
