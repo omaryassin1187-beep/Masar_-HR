@@ -211,7 +211,7 @@ class HourlyLeaveRequestController extends Controller
         return HourlyLeaveRequestResource::collection($hourlyLeaveRequest);
     }
 
-    public function getAllHourlyLeaveRequests(Request $request)
+    public function getFilteredHourlyLeaveRequests(Request $request)
     {
         $validated = $request->validate([
             'status' => 'nullable|in:pending,approved,rejected',
@@ -245,5 +245,14 @@ class HourlyLeaveRequestController extends Controller
                 ->latest()
                 ->get()
         );
+    }
+
+    public function getAllHourlyLeaveRequests()
+    {
+        $hourlyLeaveRequests = HourlyLeaveEquest::with('user')
+            ->latest()
+            ->get();
+
+        return HourlyLeaveRequestResource::collection($hourlyLeaveRequests);
     }
 }

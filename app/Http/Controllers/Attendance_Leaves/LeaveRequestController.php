@@ -307,7 +307,7 @@ class LeaveRequestController extends Controller
         ]);
     }
 
-    public function getAllLeaveRequests(Request $request)
+    public function getFilteredLeaveRequests(Request $request)
     {
         $validated = $request->validate([
             'status' => 'nullable|in:pending,approved,rejected',
@@ -341,5 +341,15 @@ class LeaveRequestController extends Controller
                 ->latest()
                 ->get()
         );
+    }
+
+    public function AllLeaveRequests()
+    {
+        $leaveRequests = LeaveRequest::latest()->get();
+
+        return response()->json([
+            'message' => 'All leave requests retrieved successfully',
+            'data' => LeaveRequestResource::collection($leaveRequests),
+        ]);
     }
 }

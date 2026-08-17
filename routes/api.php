@@ -207,8 +207,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 
-
-        Route::get('all-leave-request', [LeaveRequestController::class, 'getAllLeaveRequests']);
+        Route::get('all-leave-request', [LeaveRequestController::class, 'AllLeaveRequests']);
+        Route::get('filtered-leave-request', [LeaveRequestController::class, 'getFilteredLeaveRequests']);
+        Route::get('filtered-hourly-leave-request', [HourlyLeaveRequestController::class, 'getFilteredHourlyLeaveRequests']);
         Route::get('all-hourly-leave-request', [HourlyLeaveRequestController::class, 'getAllHourlyLeaveRequests']);
 
         Route::get('/HRjob-postings', [JobPostingController::class, 'index']);
