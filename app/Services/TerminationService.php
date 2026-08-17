@@ -24,7 +24,10 @@ class TerminationService
      */
         if ($terminationRequest->created_by_role === 'HR') {
 
-            $manager = $terminationRequest->user->manager;
+            $manager = User::role('manager')
+                ->where('dep_id', $terminationRequest->user->dep_id)
+                ->get()
+                ->first();
 
             if ($manager) {
                 $manager->notify(
@@ -77,10 +80,6 @@ class TerminationService
 
             $creator = auth()->user();
 
-            /*
-         * Only HR and Manager can create
-         * a termination request.
-         */
             if (!$creator->hasAnyRole(['HR', 'manager'])) {
                 throw ValidationException::withMessages([
                     'user' => 'You are not allowed to create a termination request.',
@@ -92,37 +91,25 @@ class TerminationService
          */
             $creatorRole = $creator->getRoleNames()->first();
 
-            /*
-         * Get employee.
-         */
             $user = User::findOrFail($data['user_id']);
 
-            /*
-         * Manager can only create termination requests
-         * for employees in his department.
-         */
+
             if (
                 $creatorRole === 'manager' &&
-                $creator->department_id !== $user->department_id
+                $creator->dep_id !== $user->dep_id
             ) {
                 throw ValidationException::withMessages([
                     'user_id' => 'You can only create termination requests for employees in your department.',
                 ]);
             }
 
-            /*
-         * Check if employee already has
-         * a termination request.
-         */
             if ($user->terminationRequest()->exists()) {
                 throw ValidationException::withMessages([
                     'user_id' => 'This employee already has a termination request.',
                 ]);
             }
 
-            /*
-         * Get active contract.
-         */
+
             $terminationDate = Carbon::parse($data['termination_date']);
 
             $contract = $user->contracts()
@@ -165,9 +152,6 @@ class TerminationService
                     ->addDays($noticePeriodDays);
             }
 
-            /*
-         * Create termination request.
-         */
             $terminationRequest = TerminationRequest::create([
                 'user_id' => $user->id,
                 'contract_id' => $contract->id,
@@ -210,9 +194,6 @@ class TerminationService
                 ],
             ]);
 
-            /*
-         * Send notification to the next approver.
-         */
             $this->sendTerminationNotifications($terminationRequest);
 
             return $terminationRequest->load([
@@ -320,6 +301,14 @@ class TerminationService
                 ]);
             }
 
+            if ($role === 'manager') {
+                if ($approver->dep_id !== $terminationRequest->user->dep_id) {
+                    throw ValidationException::withMessages([
+                        'approver' => 'You can only approve termination requests for employees in your department.',
+                    ]);
+                }
+            }
+
             // 4. تحديث سجل الموافقة
             $approval->update([
                 'status' => 'approved',
@@ -406,6 +395,14 @@ class TerminationService
                 throw ValidationException::withMessages([
                     'approval' => 'It is not your turn to reject this termination request.',
                 ]);
+            }
+
+            if ($role === 'manager') {
+                if ($approver->dep_id !== $terminationRequest->user->dep_id) {
+                    throw ValidationException::withMessages([
+                        'approver' => 'You can only reject termination requests for employees in your department.',
+                    ]);
+                }
             }
 
             $approval->update([
