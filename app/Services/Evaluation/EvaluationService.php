@@ -4,6 +4,7 @@ namespace App\Services\Evaluation;
 
 use App\Models\PerformanceEvaluation;
 use App\Models\Setting;
+use App\Models\Task;
 use App\Models\User;
 use App\Notifications\Evaluation\EvaluationApprovedNotification;
 use App\Notifications\Evaluation\SalaryIncreaseRecommendationNotification;
@@ -235,5 +236,20 @@ private function buildRecentQuartersList(int $quartersCount): array
     }
 
     return array_reverse($quartersList);
+}
+
+public function getEmployeePerformanceSummary(User $employee): array
+{
+    $tasksAssignedCount = Task::where('assigned_to', $employee->id)->count();
+
+    $latestEvaluation = PerformanceEvaluation::where('employee_id', $employee->id)
+        ->orderByDesc('year')
+        ->orderByDesc('quarter')
+        ->first();
+
+    return [
+        'tasks_assigned_count' => $tasksAssignedCount,
+        'latest_evaluation'    => $latestEvaluation,
+    ];
 }
 }
