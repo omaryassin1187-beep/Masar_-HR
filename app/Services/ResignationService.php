@@ -25,11 +25,7 @@ class ResignationService
         private ResignationSettlementCalculator $settlementCalculator
     ) {}
 
-    /**
-     * تقديم طلب استقالة. عند النوع الفوري: يتم تلقائياً إلغاء
-     * جميع المهام المفتوحة (pending/in_progress) للموظف ضمن نفس
-     * المعاملة — لا حاجة لأي إجراء يدوي من المدير لإلغائها.
-     */
+
     public function submit(User $employee, array $data): Resignation
     {
         if (Resignation::activeForUser($employee->id)->exists()) {
@@ -73,26 +69,21 @@ class ResignationService
 
             if ($data['type'] === Resignation::TYPE_IMMEDIATE) {
                 $cancelledTasks = Task::where('assigned_to', $employee->id)
-                    ->whereIn('status', ['pending', 'in_progress'])
+                    ->whereIn('status', [Task::STATUS_PENDING, Task::STATUS_IN_PROGRESS])
                     ->get();
 
                 if ($cancelledTasks->isNotEmpty()) {
                     Task::whereIn('id', $cancelledTasks->pluck('id'))
-                        ->update(['status' => 'cancelled']);
+                        ->update(['status' => Task::STATUS_CANCELLED]);
                 }
             }
 
             return $resignation;
         });
 
-        // إشعار HR بأي طلب استقالة جديد، بغض النظر عن نوعه
         event(new ResignationSubmitted($resignation));
 
-        // إشعار المدير بتفاصيل المهام الملغاة تلقائياً — فوري فقط
-        // داخل دالة submit في ResignationService
-
         if ($resignation->isImmediate()) {
-            // تحميل الموظف لضمان توفر dep_id داخل الـ Event Listener
             $resignation->load('employee');
             event(new ImmediateResignationSubmitted($resignation, $cancelledTasks));
         }

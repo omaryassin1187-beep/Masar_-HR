@@ -117,18 +117,19 @@ public function index(Request $request)
         }
     }
 
-    public function getCompletedTasksCountThisMonth(Request $request): JsonResponse
+public function getCompletedTasksCountThisMonth(Request $request): JsonResponse
 {
     try {
         $this->authorize('viewDepartmentCompletedTasksCount', Task::class);
 
-        $count = $this->taskService->getDepartmentCompletedTasksCountThisMonth($request->user()->dep_id);
+        $stats = $this->taskService->getDepartmentTaskStatsThisMonth($request->user()->dep_id);
 
         return response()->json([
             'success' => true,
             'data'    => [
-                'completed_tasks_count' => $count,
-                'month'                 => now()->translatedFormat('F Y'),
+                'completed_tasks_count'   => $stats['completed_tasks_count'],
+                'in_progress_tasks_count' => $stats['in_progress_tasks_count'],
+                'month'                   => now()->translatedFormat('F Y'),
             ],
         ], 200);
 

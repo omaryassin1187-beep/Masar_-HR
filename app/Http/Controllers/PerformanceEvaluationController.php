@@ -182,4 +182,28 @@ class PerformanceEvaluationController extends Controller
             'data'    => $data,
         ], 200);
     }
+
+    public function performanceSummary(Request $request, User $employee)
+{
+    $user = $request->user();
+
+    $summary = $this->service->getEmployeePerformanceSummary($employee);
+    $latest  = $summary['latest_evaluation'];
+
+    return response()->json([
+        'employee_id'          => $employee->id,
+        'full_name'            => $employee->full_name,
+        'tasks_assigned_count' => $summary['tasks_assigned_count'],
+        'latest_evaluation'    => $latest ? [
+            'id'                => $latest->id,
+            'quarter'           => $latest->quarter,
+            'year'              => $latest->year,
+            'automated_score'   => $latest->automated_score,
+            'final_score'       => $latest->final_score,
+            'rating_label'      => $latest->rating_label,
+            'behavioral_rating' => $latest->behavioral_rating,
+            'status'            => $latest->status,
+        ] : null,
+    ]);
+}
 }

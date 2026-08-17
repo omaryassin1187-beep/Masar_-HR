@@ -97,6 +97,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('departments/employees', [DepartmentController::class, 'getEmployeesByDepartment']);
     Route::get('/dep-performance', [PerformanceEvaluationController::class, 'getDepartmentQuarterlyPerformance']);
 
+    Route::get('top-performance', [PerformanceEvaluationController::class, 'getTopPerformers']);
+
+
 
     Route::put('check-in', [AttendanceController::class, 'checkIn']);
     Route::put('check-out', [AttendanceController::class, 'checkOut']);
@@ -224,6 +227,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/job-postings/{jobPosting}/offers', [OfferController::class, 'store']);
         Route::get('/job-postings/{jobPosting}/offers',  [OfferController::class, 'index']);
 
+        Route::get('/allcontracts', [ContractController::class, 'index']);
+
         Route::get('/contracts/pending-signature', [ContractSignatureController::class, 'pendingSignature']);
         Route::get('/contracts/expiring-soon', [ContractRenewalController::class, 'expiringSoon']);
 
@@ -262,6 +267,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('new-hires', [UserController::class, 'getNewHiresThisMonth']);
         Route::get('/by-role-users', [userController::class, 'getAllUsersByRole']);
+
+
 
 
         Route::get('payroll/current', [PayrollController::class, 'current']);
@@ -349,6 +356,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('termination-requests', [TerminationRequestsController::class, 'requestsToApprove']);
         Route::put('approve/{id}/termination', [TerminationRequestsController::class, 'approve']);
         Route::put('reject/{id}/termination', [TerminationRequestsController::class, 'reject']);
+
+        Route::get('summary-performance/users/{employee}', [PerformanceEvaluationController::class, 'performanceSummary']);
     });
 });
 
