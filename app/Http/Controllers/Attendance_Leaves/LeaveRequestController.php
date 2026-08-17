@@ -232,7 +232,7 @@ class LeaveRequestController extends Controller
     {
         $employee = User::findOrFail($userId);
 
-        Gate::authorize('viewEmployeeLeaves', $employee);
+        //Gate::authorize('viewEmployeeLeaves', $employee);
 
         $leaveRequests = LeaveRequest::with('user')
             ->where('user_id', $userId)
@@ -247,11 +247,26 @@ class LeaveRequestController extends Controller
     {
         $employee = User::with('leaveBalance')->findOrFail($userId);
 
-        Gate::authorize('viewEmployeeLeaves', $employee);
+        $authUser = Auth::user();
+
+        if ($authUser->hasAnyRole(['admin', 'HR'])) {
+            // Allowed
+        } elseif ($authUser->hasRole('manager')) {
+
+            if ((int) $authUser->dep_id !== (int) $employee->dep_id) {
+                return response()->json([
+                    'message' => 'You are not authorized to view this employee leave balance.',
+                ], 403);
+            }
+        } else {
+            return response()->json([
+                'message' => 'You are not authorized to view this employee leave balance.',
+            ], 403);
+        }
+
         return response()->json([
             'user_id' => $employee->id,
             'leave_balances' => $employee->leaveBalance->map(function ($balance) {
-
                 return [
                     'leave_type' => $balance->leave_type,
                     'total_days' => $balance->total_days,
@@ -266,7 +281,7 @@ class LeaveRequestController extends Controller
 
     public function getMyLeaveBalances()
     {
-        
+
         $employee = Auth::user();
 
         if (!$employee) {

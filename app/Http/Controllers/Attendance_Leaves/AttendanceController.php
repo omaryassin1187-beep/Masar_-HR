@@ -117,7 +117,6 @@ class AttendanceController extends Controller
             ->get();
 
         return [
-            'attendances' => $attendances,
             'total' => $attendances->count(),
             'present' => $attendances->where('status', 'present')->count(),
             'late' => $attendances->where('status', 'late')->count(),
@@ -132,7 +131,6 @@ class AttendanceController extends Controller
             ->with('user')
             ->whereDate('date', today())
             ->visibleTo(auth()->user())
-            ->orderBy('check_in')
             ->get();
     }
 
@@ -207,5 +205,46 @@ class AttendanceController extends Controller
             'absent_percentage' => round(($absent / $total) * 100, 2),
             'late_percentage' => round(($late / $total) * 100, 2),
         ];
+    }
+
+    public function getLastFourMonthsAttendancePercentage()
+    {
+        $result = [];
+
+        for ($i = 0; $i < 4; $i++) {
+
+            $month = now()->subMonths($i);
+
+            $attendances = Attendance::query()
+                ->whereMonth('date', $month->month)
+                ->whereYear('date', $month->year)
+                ->get();
+
+            $total = $attendances->count();
+
+            if ($total === 0) {
+                $result[] = [
+                    'month' => $month->format('Y-m'),
+                    'present_percentage' => 0,
+                    'absent_percentage' => 0,
+                    'late_percentage' => 0,
+                ];
+
+                continue;
+            }
+
+            $present = $attendances->where('status', 'present')->count();
+            $absent = $attendances->where('status', 'absent')->count();
+            $late = $attendances->where('status', 'late')->count();
+
+            $result[] = [
+                'month' => $month->format('Y-m'),
+                'present_percentage' => round(($present / $total) * 100, 2),
+                'absent_percentage' => round(($absent / $total) * 100, 2),
+                'late_percentage' => round(($late / $total) * 100, 2),
+            ];
+        }
+
+        return $result;
     }
 }

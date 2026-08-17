@@ -55,7 +55,9 @@ class TerminationRequestResource extends JsonResource
                         'subtype' => $this->immediateTerminationDetail->subtype,
                         'compensation_amount' => $this->immediateTerminationDetail->compensation_amount,
                         'legal_reason' => $this->immediateTerminationDetail->legal_reason,
-                        'documents_path' => $this->immediateTerminationDetail->documents_path,
+                        'documents_url' => $this->immediateTerminationDetail->documents_path
+                            ? asset('storage/' . $this->immediateTerminationDetail->documents_path)
+                            : null,
                         'notes' => $this->immediateTerminationDetail->notes,
                     ];
                 }

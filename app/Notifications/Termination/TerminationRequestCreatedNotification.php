@@ -40,7 +40,7 @@ class TerminationRequestCreatedNotification extends Notification implements Shou
 
             'employee_id' => $this->terminationRequest->user_id,
 
-            'employee_name' => $this->terminationRequest->user->name,
+            'employee_name' => $this->terminationRequest->user->full_name,
 
             'termination_type' => $this->terminationRequest->type,
 
@@ -48,7 +48,7 @@ class TerminationRequestCreatedNotification extends Notification implements Shou
 
             'last_working_day' => $this->terminationRequest->last_working_day,
 
-            'created_by' => $this->terminationRequest->createdBy->name,
+            'created_by' => $this->terminationRequest->createdBy->full_name,
 
             'created_by_role' => $this->terminationRequest->created_by_role,
 
@@ -70,7 +70,7 @@ class TerminationRequestCreatedNotification extends Notification implements Shou
 
             'employee_id' => $this->terminationRequest->user_id,
 
-            'employee_name' => $this->terminationRequest->user->name,
+            'employee_name' => $this->terminationRequest->user->full_name,
 
             'termination_type' => $this->terminationRequest->type,
 
@@ -78,7 +78,7 @@ class TerminationRequestCreatedNotification extends Notification implements Shou
 
             'last_working_day' => $this->terminationRequest->last_working_day,
 
-            'created_by' => $this->terminationRequest->createdBy->name,
+            'created_by' => $this->terminationRequest->createdBy->full_name,
 
             'created_by_role' => $this->terminationRequest->created_by_role,
 

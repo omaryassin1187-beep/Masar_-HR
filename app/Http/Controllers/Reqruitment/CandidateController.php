@@ -11,9 +11,9 @@ use App\Models\JobPosting;
 use App\Services\CandidateService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Http\Request;
+use Smalot\PdfParser\Parser;
 class CandidateController extends Controller
 {
     use AuthorizesRequests;
@@ -162,5 +162,27 @@ class CandidateController extends Controller
                     ];
                 }),
         ];
+    }
+
+    
+
+    public function extractText(Request $request)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+        ]);
+
+        $file = $request->file('file');
+
+        $parser = new Parser();
+
+        $pdf = $parser->parseFile($file->getRealPath());
+
+        $text = $pdf->getText();
+
+        return response()->json([
+            'message' => 'CV text extracted successfully',
+            'text' => trim($text),
+        ]);
     }
 }

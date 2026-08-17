@@ -144,7 +144,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/payslips/{id}/download', [PayslipsController::class, 'download']);
     Route::get('/payslips/{id}/preview', [PayslipsController::class, 'preview']);
 
-    Route::get('CV-candidateSkills/{id}/requiedSkills', [CandidateController::class, 'getCandidateCvAndSkills']); //for AI filtering
+    Route::get('CV-candidateSkills/{id}/requiedSkills', [CandidateController::class, 'getCandidateCvAndSkills']);//for AI filtering
+    Route::post('cv/extract-text', [CandidateController::class, 'extractText']);
 
 
     //---------------manager routes-------------
@@ -337,6 +338,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('attendance-today', [AttendanceController::class, 'getTodayAttendances']);
         Route::get('attendance-filter', [AttendanceController::class, 'getFilteredAttendances']);
         Route::get('attendance-percentage', [AttendanceController::class, 'getMonthlyAttendancePercentage']);
+        Route::get('attendance-percentage-4month', [AttendanceController::class, 'getLastFourMonthsAttendancePercentage']);
 
 
         Route::get('/announcements', [AnnouncementController::class, 'index']);
