@@ -2,11 +2,15 @@
 
 namespace App\Services\Task;
 
+use App\Http\Resources\Task\TaskResource;
+use App\Models\PerformanceEvaluation;
 use App\Models\Task;
+use App\Models\User;
 use App\Notifications\Task\TaskAssignedNotification;
 use App\Notifications\Task\TaskCancelledNotification;
 use App\Notifications\Task\TaskUpdatedNotification;
 use App\Services\Task\Concerns\NotifiesSafely;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class TaskService
@@ -90,7 +94,7 @@ class TaskService
 
             throw new \InvalidArgumentException(
                 'Cannot cancel a task that has been ' . ($statusMap[$task->status] ?? $task->status) .
-                '. Task #' . $task->id . ' is currently in status: "' . $task->status . '"'
+                    '. Task #' . $task->id . ' is currently in status: "' . $task->status . '"'
             );
         }
 
@@ -107,5 +111,68 @@ class TaskService
 
         return $task;
     }
+
+    public function getDepartmentTaskStatsThisMonth(int $departmentId): array
+    {
+        $employeeIds = User::role('employee')
+            ->where('dep_id', $departmentId)
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($employeeIds)) {
+            return [
+                'completed_tasks_count'   => 0,
+                'in_progress_tasks_count' => 0,
+            ];
+        }
+
+        $startOfMonth = Carbon::now()->startOfMonth();
+        $endOfMonth   = Carbon::now()->endOfMonth();
+
+        $stats = Task::query()
+            ->whereIn('assigned_to', $employeeIds)
+            ->selectRaw("
+            COUNT(CASE WHEN status = ? AND reviewed_at BETWEEN ? AND ? THEN 1 END) as completed_count,
+            COUNT(CASE WHEN status = ? THEN 1 END) as in_progress_count
+        ", [
+                Task::STATUS_APPROVED,
+                $startOfMonth,
+                $endOfMonth,
+                Task::STATUS_IN_PROGRESS
+            ])
+            ->first();
+
+        return [
+            'completed_tasks_count'   => (int) ($stats->completed_count ?? 0),
+            'in_progress_tasks_count' => (int) ($stats->in_progress_count ?? 0),
+        ];
+    }
+
+    public function getEmployeeTasks(int $employeeId, int $managerDepId): \Illuminate\Support\Collection
+    {
+        $employee = User::role('employee')
+            ->where('id', $employeeId)
+            ->where('dep_id', $managerDepId)
+            ->first();
+
+        if (!$employee) {
+            throw new \InvalidArgumentException('Employee not found or does not belong to your department.');
+        }
+
+        $tasks = Task::query()
+            ->where('assigned_to', $employee->id)
+            ->with(['creator', 'reviewer'])
+            ->latest()
+            ->get();
+
+        return collect([
+            'employee_id' => $employee->id,
+            'full_name'   => $employee->full_name,
+            'job_title'   => $employee->job_title,
+            'tasks_count' => $tasks->count(),
+            'tasks'       => TaskResource::collection($tasks),
+        ]);
+    }
+
 
 }

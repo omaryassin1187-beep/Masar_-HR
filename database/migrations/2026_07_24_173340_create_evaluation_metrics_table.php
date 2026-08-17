@@ -15,6 +15,8 @@ return new class extends Migration
                 ->constrained('performance_evaluations')
                 ->cascadeOnDelete();
                 //
+                ////
+                //test
 
             $table->unsignedSmallInteger('working_days_count')->default(0);
             $table->decimal('attendance_rate', 5, 2)->default(0);

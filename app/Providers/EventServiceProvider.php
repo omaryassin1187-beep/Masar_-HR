@@ -6,12 +6,15 @@ use App\Events\CandidateSignedContract;
 use App\Events\HrRejectedContract;
 use App\Events\HrRequestedResignature;
 use App\Events\HrSignedContract;
+use App\Events\ImmediateResignationSubmitted;
 use App\Events\OfferAccepted;
+use App\Events\ResignationSubmitted;
 use App\Events\TerminationApproved;
 use App\Listeners\CompleteContractAfterHrSignature;
 use App\Listeners\CreateOrUpdateContractFromCandidateSignature;
 use App\Listeners\ExecuteTermination;
-use App\Listeners\NotifyCandidateOfContractRejection;
+use App\Listeners\NotifyHrOfNewResignation;
+use App\Listeners\NotifyManagerOfCancelledTasks;
 use App\Listeners\ResendSignatureRequestToCandidate;
 use App\Listeners\SendSignatureRequestToCandidate;
 use Illuminate\Support\ServiceProvider;
@@ -32,10 +35,20 @@ class EventServiceProvider extends ServiceProvider
         HrSignedContract::class => [
             CompleteContractAfterHrSignature::class,
         ],
+
+        ResignationSubmitted::class => [
+            NotifyHrOfNewResignation::class,
+        ],
+
+        ImmediateResignationSubmitted::class => [
+        NotifyManagerOfCancelledTasks::class,
+        ],
+
         TerminationApproved::class => [
             ExecuteTermination::class,
 
         ],
+
     ];
     public function register(): void
     {

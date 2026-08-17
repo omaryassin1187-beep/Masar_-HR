@@ -18,14 +18,18 @@ class EmployeeOnboardingService
     {
         return DB::transaction(function () use ($offer) {
             $candidate = $offer->candidate;
+            $jobPosting = $offer->jobPosting;
             $settings  = Setting::instance();
+            $jobTitle = $jobPosting?->job_title;
             $user = User::create([
                 'full_name'             => $candidate->full_name,
                 'email'            => $candidate->email,
                 'dep_id'    => $offer->jobPosting->requisition->department_id,
+                'job_title' => $jobTitle,
                 'status'           => 'inactive',
                 'is_first_login'   => true,
             ]);
+
             $user->assignRole('employee');
             $startDate = Carbon::parse($offer->start_date);
             Contract::create([

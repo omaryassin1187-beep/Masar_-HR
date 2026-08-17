@@ -29,7 +29,7 @@ return new class extends Migration
             $table->timestamp('hr_signed_at')->nullable();
             $table->date('signed_at')->nullable();
             $table->enum('status', ['active', 'probation', 'expired', 'non_renewable',
-            'awaiting_hr_signature','awaiting_candidate_signature'])->default('awaiting_hr_signature');
+            'awaiting_hr_signature','awaiting_candidate_signature','terminated'])->default('awaiting_hr_signature');
             $table->timestamps();
         });
     }
