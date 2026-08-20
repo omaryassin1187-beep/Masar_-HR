@@ -111,10 +111,11 @@ class userController extends Controller
             'email' => 'required|email|exists:users,email',
             'password' => 'required',
         ]);
-        if (! Auth::attempt($request->only('email', 'password'))) {
+
+        if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json(
                 [
-                    'message' => 'Envalid email Or Password. ',
+                    'message' => 'Invalid email Or Password.',
                     'status_code' => 400,
                 ],
                 400
@@ -123,12 +124,15 @@ class userController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (! $user) {
+        if (!$user) {
             return response()->json([
                 'message' => 'User not found.',
                 'status_code' => 404,
             ], 404);
         }
+
+        // Get the user's role using Spatie
+        $role = $user->roles()->first();
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -136,6 +140,8 @@ class userController extends Controller
             'message' => 'Login successfully.',
             'data' => [
                 'user' => $user,
+                'role_id' => $role?->id,
+                'role' => $role?->name,
             ],
             'Token' => $token,
             'status_code' => 200,

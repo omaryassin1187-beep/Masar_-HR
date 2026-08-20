@@ -38,7 +38,7 @@ class StoreProfileRequest extends FormRequest
         return [
            'birth_date'   => 'required|date', // أصبحت آمنة تماماً الآن بعد التنظيف
            'gender'       => 'required|in:male,female',
-           'phone_number' => 'numeric|required|digits:10',
+           'phone_number' => 'numeric|nullable|digits:10',
            'address'      => 'required|string',
            'picture'      => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ];

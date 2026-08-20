@@ -83,6 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('my-hourly-leave-request', [HourlyLeaveRequestController::class, 'getMyHourlyLeaveRequests']);
 
     Route::apiResource('profiles', ProfileController::class);
+    Route::get('my-profile', [ProfileController::class, 'myProfile']);
 
     Route::get('/notifications', [userController::class, 'getNotifications']);
     Route::post('/notifications/{id}/read', [userController::class, 'markAsRead']);
@@ -144,7 +145,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/payslips/{id}/download', [PayslipsController::class, 'download']);
     Route::get('/payslips/{id}/preview', [PayslipsController::class, 'preview']);
 
-    Route::get('CV-candidateSkills/{id}/requiedSkills', [CandidateController::class, 'getCandidateCvAndSkills']);//for AI filtering
+    Route::get('CV-candidateSkills/{id}/requiedSkills', [CandidateController::class, 'getCandidateCvAndSkills']); //for AI filtering
     Route::post('cv/extract-text', [CandidateController::class, 'extractText']);
 
 

@@ -132,12 +132,30 @@ class LeaveRequestController extends Controller
     public function approveLeaveRequest(string $id)
     {
         $leaveRequest = LeaveRequest::findOrFail($id);
-        Gate::authorize('checkManager', $leaveRequest->user);
-        if ($leaveRequest->status !== 'pending') {
+
+        $user = Auth::user();
+        $employee = $leaveRequest->user;
+
+        // Check that the current user is a manager
+        if (!$user->hasRole('manager')) {
             return response()->json([
-                'message' => ' Only pending requests can be modified.'
+                'message' => 'Only managers can approve leave requests.'
             ], 403);
         }
+
+        // Check that the employee belongs to the manager's department
+        if ($user->dep_id !== $employee->dep_id) {
+            return response()->json([
+                'message' => 'You are not authorized to approve this leave request.'
+            ], 403);
+        }
+
+        if ($leaveRequest->status !== 'pending') {
+            return response()->json([
+                'message' => 'Only pending requests can be modified.'
+            ], 403);
+        }
+
         $leaveRequest->update([
             'status' => 'approved',
         ]);
@@ -146,7 +164,7 @@ class LeaveRequestController extends Controller
 
         return response()->json([
             'message' => 'Leave request approved successfully.',
-            'data'    =>  new LeaveRequestResource($leaveRequest),
+            'data'    => new LeaveRequestResource($leaveRequest),
         ]);
     }
 
@@ -154,22 +172,44 @@ class LeaveRequestController extends Controller
     public function rejectLeaveRequest(string $id)
     {
         $leaveRequest = LeaveRequest::findOrFail($id);
-        Gate::authorize('checkManager', $leaveRequest->user);
-        if ($leaveRequest->status !== 'pending') {
+
+        $user = Auth::user();
+        $employee = $leaveRequest->user;
+
+        // Check that the current user is a manager
+        if (!$user->hasRole('manager')) {
             return response()->json([
-                'message' => ' Only pending requests can be modified.'
+                'message' => 'Only managers can reject leave requests.'
             ], 403);
         }
+
+        // Check that the employee belongs to the manager's department
+        if ($user->dep_id !== $employee->dep_id) {
+            return response()->json([
+                'message' => 'You are not authorized to reject this leave request.'
+            ], 403);
+        }
+
+        if ($leaveRequest->status !== 'pending') {
+            return response()->json([
+                'message' => 'Only pending requests can be modified.'
+            ], 403);
+        }
+
         $leaveRequest->update([
             'status' => 'rejected',
         ]);
 
         $LeaveRequestOwner = $leaveRequest->user;
-        Notification::send($LeaveRequestOwner, new LeaveRequestRejectedNotification($leaveRequest));
+
+        Notification::send(
+            $LeaveRequestOwner,
+            new LeaveRequestRejectedNotification($leaveRequest)
+        );
 
         return response()->json([
-            'message' => 'Leave request rjected successfully.',
-            'data'    =>  new LeaveRequestResource($leaveRequest),
+            'message' => 'Leave request rejected successfully.',
+            'data'    => new LeaveRequestResource($leaveRequest),
         ]);
     }
 
