@@ -322,6 +322,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/resignations', [ResignationController::class, 'store']);
         Route::get('/resigna/mine', [ResignationController::class, 'mine']);
+
+        Route::get('/getMyDepartmentMembers', [userController::class, 'getMyDepartmentMembers']);
     });
 
 

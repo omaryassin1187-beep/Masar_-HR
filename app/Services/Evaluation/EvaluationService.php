@@ -165,38 +165,43 @@ public function getDepartmentQuarterlyPerformance(int $departmentId, int $quarte
     return $result;
 }
 
-public function getTopPerformersForLatestQuarter(int $departmentId, int $limit = 3): array
+public function getTopPerformersForLatestQuarter(?int $departmentId = null, int $limit = 1): array
 {
-    $employeeIds = User::role('employee')
-        ->where('dep_id', $departmentId)
-        ->pluck('id')
-        ->toArray();
+    $employeeQuery = User::role('employee');
+
+    if (!is_null($departmentId)) {
+        $employeeQuery->where('dep_id', $departmentId);
+    }
+
+    $employeeIds = $employeeQuery->pluck('id')->toArray();
 
     if (empty($employeeIds)) {
         return ['year' => null, 'quarter' => null, 'employees' => []];
     }
 
-    $currentYear = Carbon::now()->year;
-
-    $latestQuarter = PerformanceEvaluation::query()
+    $latestEvaluation = PerformanceEvaluation::query()
         ->whereIn('employee_id', $employeeIds)
         ->where('status', PerformanceEvaluation::STATUS_APPROVED)
-        ->where('year', $currentYear)
-        ->max('quarter');
+        ->orderByDesc('year')
+        ->orderByDesc('quarter')
+        ->first(['year', 'quarter']);
 
-    if (is_null($latestQuarter)) {
-        return ['year' => $currentYear, 'quarter' => null, 'employees' => []];
+    if (!$latestEvaluation) {
+        return ['year' => null, 'quarter' => null, 'employees' => []];
     }
 
+    $targetYear = $latestEvaluation->year;
+    $targetQuarter = $latestEvaluation->quarter;
+
     $topEmployees = PerformanceEvaluation::query()
-        ->with('employee:id,full_name,job_title')
+        ->with('employee:id,full_name,job_title,dep_id')
         ->whereIn('employee_id', $employeeIds)
         ->where('status', PerformanceEvaluation::STATUS_APPROVED)
-        ->where('year', $currentYear)
-        ->where('quarter', $latestQuarter)
+        ->where('year', $targetYear)
+        ->where('quarter', $targetQuarter)
         ->whereNotNull('final_score')
-        ->orderByDesc('final_score')
-        ->limit($limit)
+        ->orderByDesc('final_score') // الترتيب من الأعلى للأقل
+        ->limit($limit)               // جلب أعلى يوزر فقط عند إرسال limit = 1
         ->get()
         ->map(fn ($evaluation) => [
             'employee_id'  => $evaluation->employee_id,
@@ -207,8 +212,8 @@ public function getTopPerformersForLatestQuarter(int $departmentId, int $limit =
         ]);
 
     return [
-        'year'      => $currentYear,
-        'quarter'   => $latestQuarter,
+        'year'      => $targetYear,
+        'quarter'   => $targetQuarter,
         'employees' => $topEmployees,
     ];
 }

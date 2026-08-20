@@ -410,4 +410,40 @@ class userController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Get current authenticated employee's department colleagues and department manager.
+     */
+    public function getMyDepartmentMembers(): JsonResponse
+    {
+        $currentUser = auth()->user();
+
+        // حالة طرفية: الموظف غير محدد له قسم بعد
+        if (! $currentUser->dep_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User is not assigned to any department.',
+            ], 400);
+        }
+
+        $manager = User::role('manager')
+            ->where('dep_id', $currentUser->dep_id)
+            ->first();
+
+        $colleagues = User::role('employee')
+            ->where('dep_id', $currentUser->dep_id)
+            ->where('id', '!=', $currentUser->id)
+            ->when($manager, fn($query) => $query->where('id', '!=', $manager->id))
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Department members retrieved successfully.',
+            'data'    => [
+                'department_id' => $currentUser->dep_id,
+                'manager'       => $manager ? new UserResource($manager) : null,
+                'colleagues'    => UserResource::collection($colleagues),
+            ],
+        ], 200);
+    }
 }
