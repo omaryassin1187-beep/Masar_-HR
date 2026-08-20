@@ -11,6 +11,7 @@ use Exception;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -103,10 +104,28 @@ class ProfileController extends Controller
     {
         $userId = Auth::user()->id;
         $profile = Profile::findOrFail($id);
+
         if ($profile->user_id != $userId) {
             return response()->json('Unauthenticated.', 403);
         }
-        $profile->update($request->validated());
+
+        $validated = $request->validated();
+
+        // معالجة الصورة بشكل منفصل
+        if ($request->hasFile('picture')) {
+            // حذف الصورة القديمة إذا كانت موجودة وليست default
+            if ($profile->picture && $profile->picture !== 'default.jpg') {
+                Storage::disk('public')->delete($profile->picture);
+            }
+
+            $validated['picture'] = $request->file('picture')->store('profile_pictures', 'public');
+        } else {
+            // تجنب الكتابة فوق الصورة الحالية بقيمة فارغة أو null لو ما انبعت ملف جديد
+            unset($validated['picture']);
+        }
+
+        $profile->update($validated);
+
         return new ProfileResource($profile);
     }
 
@@ -116,5 +135,12 @@ class ProfileController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function myProfile()
+    {
+        $profile = Profile::where('user_id', Auth::id())->firstOrFail();
+
+        return new ProfileResource($profile);
     }
 }

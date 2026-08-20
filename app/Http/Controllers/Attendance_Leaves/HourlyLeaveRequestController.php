@@ -119,12 +119,30 @@ class HourlyLeaveRequestController extends Controller
     public function approveHourlyLeaveRequest(string $id)
     {
         $hourlyLeaveRequest = HourlyLeaveEquest::findOrFail($id);
-        Gate::authorize('checkManager', $hourlyLeaveRequest->user);
-        if ($hourlyLeaveRequest->status !== 'pending') {
+
+        $user = Auth::user();
+        $employee = $hourlyLeaveRequest->user;
+
+        // Check that the current user is a manager
+        if (!$user->hasRole('manager')) {
             return response()->json([
-                'message' => ' Only pending requests can be modified.'
+                'message' => 'Only managers can approve hourly leave requests.'
             ], 403);
         }
+
+        // Check that the employee belongs to the manager's department
+        if ($user->dep_id !== $employee->dep_id) {
+            return response()->json([
+                'message' => 'You are not authorized to approve this hourly leave request.'
+            ], 403);
+        }
+
+        if ($hourlyLeaveRequest->status !== 'pending') {
+            return response()->json([
+                'message' => 'Only pending requests can be modified.'
+            ], 403);
+        }
+
         $hourlyLeaveRequest->update([
             'status' => 'approved',
         ]);
@@ -132,30 +150,52 @@ class HourlyLeaveRequestController extends Controller
         HourlyLeaveRequestApproved::dispatch($hourlyLeaveRequest);
 
         return response()->json([
-            'message' => 'Leave request approved successfully.',
-            'data'    =>  new HourlyLeaveRequestResource($hourlyLeaveRequest),
+            'message' => 'Hourly leave request approved successfully.',
+            'data'    => new HourlyLeaveRequestResource($hourlyLeaveRequest),
         ]);
     }
 
     public function rejectHourlyLeaveRequest(string $id)
     {
         $hourlyLeaveRequest = HourlyLeaveEquest::findOrFail($id);
-        Gate::authorize('checkManager', $hourlyLeaveRequest->user);
-        if ($hourlyLeaveRequest->status !== 'pending') {
+
+        $user = Auth::user();
+        $employee = $hourlyLeaveRequest->user;
+
+        // Check that the current user is a manager
+        if (!$user->hasRole('manager')) {
             return response()->json([
-                'message' => ' Only pending requests can be modified.'
+                'message' => 'Only managers can reject hourly leave requests.'
             ], 403);
         }
+
+        // Check that the employee belongs to the manager's department
+        if ($user->dep_id !== $employee->dep_id) {
+            return response()->json([
+                'message' => 'You are not authorized to reject this hourly leave request.'
+            ], 403);
+        }
+
+        if ($hourlyLeaveRequest->status !== 'pending') {
+            return response()->json([
+                'message' => 'Only pending requests can be modified.'
+            ], 403);
+        }
+
         $hourlyLeaveRequest->update([
             'status' => 'rejected',
         ]);
 
         $LeaveRequestOwner = $hourlyLeaveRequest->user;
-        Notification::send($LeaveRequestOwner, new HourlyLeaveRequestRejectedNotification($hourlyLeaveRequest));
+
+        Notification::send(
+            $LeaveRequestOwner,
+            new HourlyLeaveRequestRejectedNotification($hourlyLeaveRequest)
+        );
 
         return response()->json([
-            'message' => 'Leave request rjected successfully.',
-            'data'    =>  new HourlyLeaveRequestResource($hourlyLeaveRequest),
+            'message' => 'Hourly leave request rejected successfully.',
+            'data'    => new HourlyLeaveRequestResource($hourlyLeaveRequest),
         ]);
     }
 
