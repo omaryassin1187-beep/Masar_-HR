@@ -10,6 +10,7 @@ use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -36,91 +37,75 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
 
-    ->withExceptions(function (Exceptions $exceptions): void {
+   ->withExceptions(function (Exceptions $exceptions): void {
 
-        // 1️⃣ معالجة خطأ 404
-        $exceptions->renderable(function (NotFoundHttpException $e, $request) {
-            if ($request->expectsJson()) {
-                if ($e->getPrevious() instanceof ModelNotFoundException) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Model Not Found',
-                    ], 404);
-                }
+    // 1️⃣ معالجة أخطاء التحقق من المدخلات (Validation Errors -> 422) لكل النظام
+    $exceptions->renderable(function (ValidationException $e, $request) {
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The given data was invalid.',
+                'errors'  => $e->errors(),
+            ], 422);
+        }
+    });
 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Route Not Found',
-                ], 404);
-            }
-        });
+    // 2️⃣ معالجة أخطاء عدم العثور على المسار أو الموديل (404)
+    $exceptions->renderable(function (NotFoundHttpException $e, $request) {
+        if ($request->expectsJson() || $request->is('api/*')) {
+            $isModel = $e->getPrevious() instanceof ModelNotFoundException;
+            return response()->json([
+                'success' => false,
+                'message' => $isModel ? 'Resource Not Found' : 'Route Not Found',
+            ], 404);
+        }
+    });
 
-        // 2️⃣ معالجة أخطاء الصلاحيات 403
-        $exceptions->renderable(function (AuthorizationException $e, $request) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $e->getMessage() ?: 'This action is unauthorized.',
-                ], 403);
-            }
-        });
+    // 3️⃣ معالجة أخطاء الصلاحيات (403)
+    $exceptions->renderable(function (AuthorizationException $e, $request) {
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'This action is unauthorized.',
+            ], 403);
+        }
+    });
 
-        // 3️⃣ معالجة أخطاء HTTP العامة
-        $exceptions->renderable(function (HttpException $e, $request) {
-            if ($request->expectsJson()) {
+    // 4️⃣ معالجة أخطاء تسجيل الدخول / التوكن (401)
+    $exceptions->renderable(function (AuthenticationException $e, $request) {
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+    });
+
+    $exceptions->render(function (Throwable $e, $request) {
+        if ($request->expectsJson() || $request->is('api/*')) {
+
+            $statusCode = 500;
+
+            if ($e instanceof ValidationException) {
+                $statusCode = 422;
+            } elseif (method_exists($e, 'getStatusCode')) {
                 $statusCode = $e->getStatusCode();
-
-                if ($statusCode === 403) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => $e->getMessage() ?: 'This action is unauthorized.',
-                    ], 403);
-                }
-
-                return response()->json([
-                    'success' => false,
-                    'message' => $e->getMessage() ?: 'HTTP Error Occurred',
-                ], $statusCode);
+            } elseif (is_numeric($e->getCode()) && $e->getCode() >= 400 && $e->getCode() < 600) {
+                $statusCode = (int) $e->getCode();
             }
-        });
 
-        // ✅ 4️⃣ معالجة أخطاء المصادقة (Authentication) - توكن غير صحيح
-        $exceptions->renderable(function (AuthenticationException $e, $request) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthenticated.',
-                ], 401); // ✅ 401 Unauthorized
-            }
-        });
+            return response()->json([
+                'success' => false,
+                'message' => config('app.debug') ? $e->getMessage() : 'Something Went Wrong',
+            ], $statusCode);
+        }
+    });
 
-        // 5️⃣ شبكة الأمان الخلفية (Fallback) لجميع الأخطاء الأخرى
-        $exceptions->render(function (Throwable $e, $request) {
-            if ($request->expectsJson()) {
-                $statusCode = 500;
-
-                if (method_exists($e, 'getStatusCode')) {
-                    $statusCode = $e->getStatusCode();
-                } elseif (is_numeric($e->getCode()) && $e->getCode() >= 400 && $e->getCode() < 600) {
-                    $statusCode = (int) $e->getCode();
-                }
-
-                $response = [
-                    'success' => false,
-                    'message' => config('app.debug') ? $e->getMessage() : 'Something Went Wrong',
-                ];
-
-
-
-                return response()->json($response, $statusCode);
-            }
-        });
-
-        $exceptions->renderable(function (\App\Exceptions\ResignationException $e, $request) {
-        if ($request->expectsJson()) {
+    $exceptions->renderable(function (\App\Exceptions\ResignationException $e, $request) {
+        if ($request->expectsJson() || $request->is('api/*')) {
             return $e->render($request);
         }
     });
 
-    })
+})
     ->create();

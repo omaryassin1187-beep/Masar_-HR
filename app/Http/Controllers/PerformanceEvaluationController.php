@@ -169,19 +169,25 @@ class PerformanceEvaluationController extends Controller
         ], 200);
     }
 
-    public function getTopPerformers(Request $request): JsonResponse
-    {
-        $this->authorize('viewDepartmentPerformance', PerformanceEvaluation::class);
+public function getTopPerformers(Request $request): JsonResponse
+{
+    $this->authorize('viewDepartmentPerformance', PerformanceEvaluation::class);
 
-        $limit = (int) $request->input('limit', 3);
+    $user = $request->user();
 
-        $data = $this->service->getTopPerformersForLatestQuarter($request->user()->dep_id, $limit);
+    // 1. تحديد عدد النتائج المطلوب (افتراضياً 1 لإعادة أعلى موظف فقط)
+    $limit = (int) $request->input('limit', 1);
 
-        return response()->json([
-            'success' => true,
-            'data'    => $data,
-        ], 200);
-    }
+    // 2. إذا كان مدير قسم نأخذ dep_id الخاص به، أما الأدمن والـ HR فتمرر null لجلب الأعلى على مستوى كل الشركة
+    $departmentId = $user->hasRole('manager') ? $user->dep_id : null;
+
+    $data = $this->service->getTopPerformersForLatestQuarter($departmentId, $limit);
+
+    return response()->json([
+        'success' => true,
+        'data'    => $data,
+    ], 200);
+}
 
     public function performanceSummary(Request $request, User $employee)
 {

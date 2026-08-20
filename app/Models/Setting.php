@@ -68,7 +68,7 @@ class Setting extends Model
             'grace_period'            => 15,
             'company_latitude'        => 33.5154600,
             'company_longitude'       => 36.2788800,
-            'allowed_radius'          => 200,
+            'allowed_radius'          => 500,
             'eval_task_quality_weight'       => 0.40,
             'eval_task_ontime_weight'        => 0.30,
             'eval_attendance_weight'         => 0.30,
